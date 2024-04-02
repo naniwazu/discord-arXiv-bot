@@ -2,6 +2,7 @@ import os
 import discord
 import json
 import arxiv
+from tools import parse
 
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 with open(config_path) as config_file:
@@ -13,6 +14,7 @@ intents.message_content = True
 discord_client = discord.Client(intents=intents)
 arxiv_client = arxiv.Client()
 
+
 @discord_client.event
 async def on_ready():
     print('bot ready')
@@ -20,9 +22,11 @@ async def on_ready():
     channel = discord.utils.get(guild.text_channels, name='arxiv')
     await channel.send('bot ready')
 
+
 @discord_client.event
 async def on_connect():
     print('bot connected')
+
 
 @discord_client.event
 async def on_disconnect():
@@ -31,23 +35,15 @@ async def on_disconnect():
     channel = discord.utils.get(guild.text_channels, name='arxiv')
     await channel.send('bot disconnected')
 
+
 @discord_client.event
 async def on_message(message):
     if message.author.bot:
         return
-    search_query, max_results = message.content.split(",")
-    max_results = int(max_results)
-    if max_results <= 0 or max_results > 50:
-        await message.chanel.send("query count is invalid")
-    search = arxiv.Search(
-        query=search_query, 
-        max_results=max_results,
-        sort_by = arxiv.SortCriterion.LastUpdatedDate,
-        sort_order = arxiv.SortOrder.Descending
-    )
-    result = arxiv_client.results(search)
+    query = parse(message.content)
+    result = arxiv_client.results(query)
     for r in result:
-        await message.channel.send(r.title)    
+        await message.channel.send(r.title)
         await message.channel.send(r.pdf_url)
 
 discord_client.run(token)
