@@ -35,7 +35,8 @@ async def on_disconnect():
 async def on_message(message):
     if message.author.bot:
         return
-    search_query, max_results = message.content.split()
+    search_query, max_results = message.content.split(",")
+    max_results = int(max_results)
     search = arxiv.Search(
         query=search_query, 
         max_results=max_results,
