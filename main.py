@@ -7,8 +7,6 @@ config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 with open(config_path) as config_file:
     config = json.load(config_file)
 
-max_result = 5
-
 token = config['token']
 intents = discord.Intents.default()
 intents.message_content = True
@@ -37,10 +35,10 @@ async def on_disconnect():
 async def on_message(message):
     if message.author.bot:
         return
-    search_query = 'cat:' + message.content
+    search_query, max_results = message.content.split()
     search = arxiv.Search(
         query=search_query, 
-        max_results=max_result,
+        max_results=max_results,
         sort_by = arxiv.SortCriterion.LastUpdatedDate,
         sort_order = arxiv.SortOrder.Descending
     )
