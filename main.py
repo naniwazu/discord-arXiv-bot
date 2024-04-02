@@ -37,6 +37,8 @@ async def on_message(message):
         return
     search_query, max_results = message.content.split(",")
     max_results = int(max_results)
+    if max_results <= 0 or max_results > 50:
+        await message.chanel.send("query count is invalid")
     search = arxiv.Search(
         query=search_query, 
         max_results=max_results,
@@ -45,8 +47,6 @@ async def on_message(message):
     )
     result = arxiv_client.results(search)
     for r in result:
-        print(r.title)
-        print(r.pdf_url)
         await message.channel.send(r.title)    
         await message.channel.send(r.pdf_url)
 
