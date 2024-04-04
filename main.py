@@ -17,23 +17,23 @@ arxiv_client = arxiv.Client()
 
 @discord_client.event
 async def on_ready():
-    print('bot ready')
-    guild = discord.utils.get(discord_client.guilds, name='arXiv 取得用')
-    channel = discord.utils.get(guild.text_channels, name='arxiv')
-    await channel.send('bot ready')
+    for guild in discord_client.guilds:
+        channel = discord.utils.get(guild.text_channels, name='bot-info')
+        await channel.send('bot ready')
 
 
 @discord_client.event
 async def on_connect():
-    print('bot connected')
+    for guild in discord_client.guilds:
+        channel = discord.utils.get(guild.text_channels, name='bot-info')
+        await channel.send('bot connected')
 
 
 @discord_client.event
 async def on_disconnect():
-    print('bot disconnected')
-    guild = discord.utils.get(discord_client.guilds, name='arXiv 取得用')
-    channel = discord.utils.get(guild.text_channels, name='arxiv')
-    await channel.send('bot disconnected')
+    for guild in discord_client.guilds:
+        channel = discord.utils.get(guild.text_channels, name='bot-info')
+        await channel.send('bot disconnected')
 
 
 @discord_client.event
