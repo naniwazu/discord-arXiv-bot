@@ -40,6 +40,8 @@ async def on_disconnect():
 async def on_message(message):
     if message.author.bot:
         return
+    if discord_client.user not in message.mentions:
+        return
     query = parse(message.content)
     result = arxiv_client.results(query)
     for r in result:

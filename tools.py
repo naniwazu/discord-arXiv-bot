@@ -23,6 +23,8 @@ def parse(search_query):
     for chunk in chunks:
         if chunk in sort_by_dict:
             sort_by = sort_by_dict[chunk]
+        elif chunk[0] == '<':
+            continue
         elif chunk.isdecimal():
             new_max_results = int(chunk)
             if 1 <= new_max_results <= 50:
