@@ -1,3 +1,4 @@
+import sys
 import os
 import discord
 import json
@@ -43,9 +44,12 @@ async def on_message(message):
     if discord_client.user not in message.mentions:
         return
     query = parse(message.content)
+    print(query)
     result = arxiv_client.results(query)
+    return_list = []
     for r in result:
-        await message.channel.send(r.title)
-        await message.channel.send(r.pdf_url)
+        return_list.append(r.title)
+        return_list.append(r.pdf_url)
+    await message.channel.send('\n'.join(return_list))
 
 discord_client.run(token)
