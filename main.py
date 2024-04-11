@@ -59,7 +59,12 @@ async def on_message(message):
         max_results -= 1
         if max_results <= 0:
             break
+    sent = False
     for r in return_list:
-        await message.channel.send(r[:-1])  # remove last \n
+        if len(r) > 0:
+            await message.channel.send(r[:-1])  # remove last \n
+            sent = True
+    if sent == False:
+        await message.channel.send('No results found')
 
 discord_client.run(token)
