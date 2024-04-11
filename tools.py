@@ -1,7 +1,12 @@
 from curses.ascii import isdigit
+import datetime
+import pytz
 import arxiv
 
 default_max_result = 10
+jst = pytz.timezone('Japan')
+since = None
+until = None
 sort_by_dict = {
     "L": arxiv.SortCriterion.LastUpdatedDate,
     "l": arxiv.SortCriterion.LastUpdatedDate,
@@ -31,6 +36,14 @@ def parse(search_query):
                 max_results = new_max_results
         elif chunk.count(":") == 1:
             prefix, body = chunk.split(":")
+            if prefix == 'since':
+                since = jst.localize(
+                    datetime.datetime.strptime(body, '%Y%m%d'))
+                continue
+            if prefix == 'until':
+                until = jst.localize(datetime.datetime.strptime(
+                    body, '%Y%m%d') + datetime.timedelta(days=1))
+                continue
             if prefix not in search_field:
                 continue
             keywords = body.split(",")
@@ -39,7 +52,6 @@ def parse(search_query):
     query = " AND ".join(queries)
     return arxiv.Search(
         query=query,
-        max_results=max_results,
         sort_by=sort_by,
         sort_order=arxiv.SortOrder.Descending
-    )
+    ), max_results, since, until

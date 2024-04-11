@@ -43,13 +43,23 @@ async def on_message(message):
         return
     if discord_client.user not in message.mentions:
         return
-    query = parse(message.content)
-    print(query)
+    query, max_results, since, until = parse(message.content)
     result = arxiv_client.results(query)
-    return_list = []
+    return_list = [""]
     for r in result:
-        return_list.append(r.title)
-        return_list.append(r.pdf_url)
-    await message.channel.send('\n'.join(return_list))
+        if since is not None and r.published < since:
+            continue
+        if until is not None and r.published > until:
+            continue
+        next_content = r.title + '\n' + r.pdf_url + '\n'
+        if len(return_list[-1]) + len(next_content) > 2000:
+            return_list.append(next_content)
+        else:
+            return_list[-1] += next_content
+        max_results -= 1
+        if max_results <= 0:
+            break
+    for r in return_list:
+        await message.channel.send(r[:-1])  # remove last \n
 
 discord_client.run(token)
