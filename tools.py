@@ -5,8 +5,6 @@ import arxiv
 
 default_max_result = 10
 jst = pytz.timezone('Japan')
-since = None
-until = None
 sort_by_dict = {
     "L": arxiv.SortCriterion.LastUpdatedDate,
     "l": arxiv.SortCriterion.LastUpdatedDate,
@@ -23,6 +21,8 @@ search_field = {
 def parse(search_query):
     queries = []
     max_results = default_max_result
+    since = None
+    until = None
     sort_by = arxiv.SortCriterion.SubmittedDate
     chunks = list(search_query.split())
     for chunk in chunks:
