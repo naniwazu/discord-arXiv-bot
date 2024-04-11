@@ -5,6 +5,9 @@ import json
 import arxiv
 from tools import parse
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 with open(config_path) as config_file:
     config = json.load(config_file)
@@ -43,26 +46,20 @@ async def on_message(message):
         return
     if discord_client.user not in message.mentions:
         return
-    query, max_results, since, until = parse(message.content)
+    query = parse(message.content)
+    print(query)
     result = arxiv_client.results(query)
     return_list = [""]
     for r in result:
-        if since is not None and r.published < since:
-            continue
-        if until is not None and r.published > until:
-            continue
         next_content = r.title + '\n' + r.pdf_url + '\n'
         if len(return_list[-1]) + len(next_content) > 2000:
             return_list.append(next_content)
         else:
             return_list[-1] += next_content
-        max_results -= 1
-        if max_results <= 0:
-            break
     sent = False
-    for r in return_list:
-        if len(r) > 0:
-            await message.channel.send(r[:-1])  # remove last \n
+    for ret in return_list:
+        if len(ret) > 0:
+            await message.channel.send(ret[:-1])  # remove last \n
             sent = True
     if sent == False:
         await message.channel.send('No results found')
