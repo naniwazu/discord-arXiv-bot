@@ -50,7 +50,7 @@ async def on_message(message):
     result = arxiv_client.results(query)
     return_list = [""]
     for r in result:
-        next_content = r.title + '\n' + r.pdf_url + '\n'
+        next_content = r.title + '\n<' + str(r) + '>\n'
         if len(return_list[-1]) + len(next_content) > 2000:
             return_list.append(next_content)
         else:
