@@ -34,11 +34,12 @@ def parse(search_query):
         elif chunk.count(":") == 1:
             prefix, body = chunk.split(":")
             if prefix == 'since':
-                since = datetime.datetime.strptime(body, '%Y%m%d')
+                since = datetime.datetime.strptime(
+                    body, '%Y%m%d') + datetime.timedelta(hours=-9)
                 continue
             if prefix == 'until':
                 until = datetime.datetime.strptime(
-                    body, '%Y%m%d') + datetime.timedelta(days=1)
+                    body, '%Y%m%d') + datetime.timedelta(days=1, hours=-9)
                 continue
             if prefix not in search_field:
                 continue

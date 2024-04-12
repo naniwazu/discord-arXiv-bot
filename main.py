@@ -47,7 +47,6 @@ async def on_message(message):
     if discord_client.user not in message.mentions:
         return
     query = parse(message.content)
-    print(query)
     result = arxiv_client.results(query)
     return_list = [""]
     for r in result:
