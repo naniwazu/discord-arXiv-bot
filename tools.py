@@ -40,6 +40,9 @@ def parse(search_query):
                 if len(body) == 8:
                     since = datetime.datetime.strptime(
                         body, '%Y%m%d') + datetime.timedelta(hours=-9)
+                elif len(body) == 12:
+                    since = datetime.datetime.strptime(
+                        body, '%Y%m%d%H%M') + datetime.timedelta(hours=-9)
                 elif len(body) == 14:
                     since = datetime.datetime.strptime(
                         body, '%Y%m%d%H%M%S') + datetime.timedelta(hours=-9)
@@ -50,6 +53,9 @@ def parse(search_query):
                 if len(body) == 8:
                     until = datetime.datetime.strptime(
                         body, '%Y%m%d') + datetime.timedelta(days=1, hours=-9)
+                if len(body) == 12:
+                    until = datetime.datetime.strptime(
+                        body, '%Y%m%d%H%M') + datetime.timedelta(days=1, hours=-9)
                 elif len(body) == 14:
                     until = datetime.datetime.strptime(
                         body, '%Y%m%d%H%M%S') + datetime.timedelta(days=1, hours=-9)
