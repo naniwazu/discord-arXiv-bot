@@ -39,19 +39,21 @@ async def loop():
                     to_process.add(channel)
     since = dt_now - datetime.timedelta(days=2)
     until = dt_now - datetime.timedelta(days=1)
+    since_string = datetime.datetime.strftime(since, '%Y%m%d%H%M%S')
+    until_string = datetime.datetime.strftime(until, '%Y%m%d%H%M%S')
     processed = set()
     for channel in to_process:
-        query = parse(channel.topic)
-        append_string = 'submittedDate:[{} TO {}]'.format(
-            datetime.datetime.strftime(since, '%Y%m%d%H%M%S'), datetime.datetime.strftime(until, '%Y%m%d%H%M%S'))
-        if len(query.query) == 0:
-            query.query = append_string
-        else:
-            query.query += ' AND ' + append_string
+        query = parse(
+            channel.topic+" since:{} until:{}".format(since_string, until_string))
+        if query is None:
+            processed.add(channel)
+            await channel.send('Invalid query')
+            break
         query.max_results = None
         result = arxiv_client.results(query)
         return_list = [""]
         for r in result:
+            # to prevent embedding, output as "<url>"
             next_content = r.title + '\n<' + str(r) + '>\n'
             if len(return_list[-1]) + len(next_content) > 2000:
                 return_list.append(next_content)
@@ -76,6 +78,9 @@ async def on_message(message):
     if discord_client.user not in message.mentions:
         return
     query = parse(message.content)
+    if query is None:
+        await message.channel.send('Invalid query')
+        return
     result = arxiv_client.results(query)
     return_list = [""]
     for r in result:
