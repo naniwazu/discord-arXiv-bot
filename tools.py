@@ -55,10 +55,10 @@ def parse(search_query):
                         body, '%Y%m%d') + datetime.timedelta(days=1, hours=-9)
                 elif len(body) == 12:
                     until = datetime.datetime.strptime(
-                        body, '%Y%m%d%H%M') + datetime.timedelta(days=1, hours=-9)
+                        body, '%Y%m%d%H%M') + datetime.timedelta(hours=-9)
                 elif len(body) == 14:
                     until = datetime.datetime.strptime(
-                        body, '%Y%m%d%H%M%S') + datetime.timedelta(days=1, hours=-9)
+                        body, '%Y%m%d%H%M%S') + datetime.timedelta(hours=-9)
                 else:
                     return None
                 continue
