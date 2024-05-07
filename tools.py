@@ -29,7 +29,7 @@ def parse(search_query):
         if chunk in sort_by_dict:
             sort_by = sort_by_dict[chunk]
         elif chunk[0] == '<':
-            continue
+            continue  # ignore mention chunk
         elif chunk.isdecimal():
             new_max_results = int(chunk)
             if 1 <= new_max_results <= 100:
@@ -52,7 +52,7 @@ def parse(search_query):
             if prefix == 'until':
                 if len(body) == 8:
                     until = datetime.datetime.strptime(
-                        body, '%Y%m%d') + datetime.timedelta(days=1, hours=-9)
+                        body, '%Y%m%d') + datetime.timedelta(days=1, hours=-9)  # end of the day
                 elif len(body) == 12:
                     until = datetime.datetime.strptime(
                         body, '%Y%m%d%H%M') + datetime.timedelta(hours=-9)
