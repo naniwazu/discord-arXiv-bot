@@ -37,8 +37,8 @@ async def loop():
             for channel in guild.text_channels:
                 if channel.name[:4] == "auto":
                     to_process.add(channel)
-    since = dt_now - datetime.timedelta(days=2)
-    until = dt_now - datetime.timedelta(days=1)
+    since = dt_now - datetime.timedelta(days=3)
+    until = dt_now - datetime.timedelta(days=2)
     since_string = datetime.datetime.strftime(since, '%Y%m%d%H%M%S')
     until_string = datetime.datetime.strftime(until, '%Y%m%d%H%M%S')
     processed = set()
