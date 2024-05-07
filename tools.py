@@ -53,7 +53,7 @@ def parse(search_query):
                 if len(body) == 8:
                     until = datetime.datetime.strptime(
                         body, '%Y%m%d') + datetime.timedelta(days=1, hours=-9)
-                if len(body) == 12:
+                elif len(body) == 12:
                     until = datetime.datetime.strptime(
                         body, '%Y%m%d%H%M') + datetime.timedelta(days=1, hours=-9)
                 elif len(body) == 14:
