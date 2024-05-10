@@ -32,7 +32,7 @@ def parse(search_query):
             continue  # ignore mention chunk
         elif chunk.isdecimal():
             new_max_results = int(chunk)
-            if 1 <= new_max_results <= 100:
+            if 1 <= new_max_results <= 1000:
                 max_results = new_max_results
         elif chunk.count(":") == 1:
             prefix, body = chunk.split(":")
