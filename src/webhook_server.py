@@ -145,25 +145,37 @@ class ArxivWebhookHandler:
         return message_list
 
 
-# Global handler instance
-handler = ArxivWebhookHandler()
+# Global handler instance - initialize when needed to ensure env vars are loaded
+handler = None
+
+def get_handler():
+    global handler
+    if handler is None:
+        handler = ArxivWebhookHandler()
+    return handler
 
 
 @app.post("/interactions")
 async def interactions_endpoint(request: Request) -> JSONResponse:
     """Discord interactions endpoint"""
+    handler = get_handler()
+    
     signature = request.headers.get("X-Signature-Ed25519")
     timestamp = request.headers.get("X-Signature-Timestamp")
     
     body = await request.body()
     
-    # Temporarily skip signature verification for initial setup
-    logger.info(f"Received interaction request. Public key set: {bool(handler.public_key)}")
+    # Proper signature verification
+    logger.info(f"Received interaction request. Public key available: {bool(handler.public_key)}")
     
-    # TODO: Re-enable signature verification after Discord endpoint validation
-    # if handler.public_key and signature and timestamp:
-    #     if not handler.verify_signature(signature, timestamp, body):
-    #         raise HTTPException(status_code=401, detail="Invalid signature")
+    if handler.public_key:
+        if not signature or not timestamp:
+            raise HTTPException(status_code=401, detail="Missing signature headers")
+        
+        if not handler.verify_signature(signature, timestamp, body):
+            raise HTTPException(status_code=401, detail="Invalid signature")
+    else:
+        logger.warning("DISCORD_PUBLIC_KEY not set - signature verification skipped")
     
     try:
         interaction_data = json.loads(body)
