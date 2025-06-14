@@ -155,7 +155,6 @@ def get_handler():
     return handler
 
 
-@app.post("/")
 @app.post("/interactions")
 async def interactions_endpoint(request: Request) -> JSONResponse:
     """Discord interactions endpoint"""
