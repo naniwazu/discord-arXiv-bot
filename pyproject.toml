@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Discord bot for searching and sharing arXiv research papers"
 authors = ["naniwazu <sakuyakonohana39@gmail.com>"]
 readme = "README.md"
-packages = [{include = "src/"}]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
