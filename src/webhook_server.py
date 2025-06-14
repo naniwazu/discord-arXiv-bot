@@ -192,6 +192,18 @@ async def health_check() -> dict[str, str]:
     return {"status": "healthy"}
 
 
+@app.get("/debug")
+async def debug_info() -> dict[str, Any]:
+    """Debug endpoint to check environment variables"""
+    handler = get_handler()
+    return {
+        "public_key_set": bool(handler.public_key),
+        "public_key_length": len(handler.public_key) if handler.public_key else 0,
+        "discord_token_set": bool(os.getenv("DISCORD_BOT_TOKEN")),
+        "env_vars": list(os.environ.keys())
+    }
+
+
 @app.post("/scheduler")
 async def scheduler_endpoint() -> dict[str, str]:
     """Scheduler endpoint for auto channel processing"""
