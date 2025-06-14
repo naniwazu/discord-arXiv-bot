@@ -30,10 +30,14 @@ class ArxivWebhookHandler:
         self.arxiv_client = arxiv.Client()
         self.public_key = os.getenv("DISCORD_PUBLIC_KEY")
         if not self.public_key:
-            raise ValueError("DISCORD_PUBLIC_KEY environment variable is required")
+            logger.warning("DISCORD_PUBLIC_KEY not set - signature verification disabled")
 
     def verify_signature(self, signature: str, timestamp: str, body: bytes) -> bool:
         """Verify Discord webhook signature"""
+        if not self.public_key:
+            logger.warning("Signature verification skipped - no public key")
+            return True
+            
         try:
             from nacl.signing import VerifyKey
             from nacl.exceptions import BadSignatureError

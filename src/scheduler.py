@@ -25,10 +25,13 @@ class ArxivScheduler:
         self.arxiv_client = arxiv.Client()
         self.discord_token = os.getenv("DISCORD_BOT_TOKEN")
         if not self.discord_token:
-            raise ValueError("DISCORD_BOT_TOKEN environment variable is required")
+            logger.warning("DISCORD_BOT_TOKEN not set - scheduler functionality disabled")
 
     async def get_auto_channels(self) -> list[dict[str, Any]]:
         """Get all channels that start with 'auto' across all guilds"""
+        if not self.discord_token:
+            return []
+            
         headers = {"Authorization": f"Bot {self.discord_token}"}
         
         async with httpx.AsyncClient() as client:
