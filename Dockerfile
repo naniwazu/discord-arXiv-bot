@@ -6,11 +6,11 @@ WORKDIR /app
 RUN pip install poetry
 
 # Copy poetry files
-COPY pyproject.toml poetry.lock* ./
+COPY pyproject.toml ./
 
 # Configure poetry: don't create virtual env, install dependencies
 RUN poetry config virtualenvs.create false \
-    && poetry install --only=main --no-interaction --no-ansi
+    && poetry install --no-interaction --no-ansi
 
 # Copy source code
 COPY src/ ./src/
