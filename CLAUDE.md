@@ -51,3 +51,36 @@ This is a serverless Discord bot that searches and shares arXiv research papers 
 
 ### Time Handling
 All date inputs are treated as JST (UTC-9). Auto-processing searches papers from 48-72 hours ago to account for arXiv's publication schedule.
+
+## Deployment Status
+
+### Railway Configuration (COMPLETED)
+- **URL**: https://discord-arxiv-bot-production.up.railway.app
+- **Environment Variables**: DISCORD_BOT_TOKEN, DISCORD_PUBLIC_KEY, PORT
+- **Interactions Endpoint**: https://discord-arxiv-bot-production.up.railway.app/interactions
+- **Health Check**: /health endpoint available
+- **Debug Endpoint**: /debug endpoint for troubleshooting
+
+### Discord Application Setup (COMPLETED)
+- Discord Developer Portal configuration completed
+- Interactions Endpoint URL validated and authenticated
+- Bot permissions: Send Messages, Use Slash Commands
+- Environment variables properly loaded and verified
+
+### Setup Complete (2025-06-14)
+1. **Slash Command Registration**: ✅ `/arxiv` command registered globally
+2. **Auto-Search Cron**: Configure Railway cron job with `0 21 * * *` to hit `/scheduler` endpoint
+3. **Bot Status**: Webhook bot appears "offline" in Discord - this is normal for interaction-based bots
+
+### Helper Scripts
+- `scripts/register_commands.py` - Register slash commands
+- `scripts/check_commands.py` - Check registered commands and get invite link
+- `scripts/delete_old_commands.py` - Delete old/unused commands
+
+### Troubleshooting Notes
+- Environment variables load correctly (verified via /debug endpoint)
+- Signature verification works when DISCORD_PUBLIC_KEY is set
+- Use `curl /debug` to check environment variable status
+- Railway logs show startup and request information
+- Bot invite link: Use the URL from `check_commands.py` output
+- If slash commands don't appear: Re-invite bot, wait a few minutes, refresh Discord (Ctrl+R)

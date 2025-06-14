@@ -5,7 +5,11 @@ import asyncio
 import os
 import sys
 
-import httpx
+try:
+    import httpx
+except ImportError:
+    print("Error: httpx is required. Install with: pip install httpx")
+    sys.exit(1)
 
 
 async def register_slash_command():
