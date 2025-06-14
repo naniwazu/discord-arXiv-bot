@@ -1,0 +1,53 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+### Development
+- `poetry install` - Install dependencies
+- `poetry run python src/webhook_server.py` - Run the webhook server
+- `poetry run python src/scheduler.py` - Run scheduler manually
+- `poetry run ruff check` - Run linting
+- `poetry run ruff format` - Format code
+
+### Environment Variables
+- `DISCORD_BOT_TOKEN` - Discord bot token
+- `DISCORD_PUBLIC_KEY` - Discord application public key (for webhook signature verification)
+- `PORT` - Server port (default: 8000)
+
+## Architecture
+
+This is a serverless Discord bot that searches and shares arXiv research papers using webhooks and slash commands.
+
+### Core Components
+1. **webhook_server.py** - FastAPI server handling Discord slash command interactions
+2. **scheduler.py** - Separate service for auto-channel processing
+3. **tools.py** - Query parser for arXiv search syntax
+4. **slash_bot.py** - Traditional Discord.py bot (alternative implementation)
+
+### Key Features
+1. **Slash Commands**: `/arxiv query` - Interactive search with slash commands
+2. **Auto Search**: Channels starting with "auto" get daily automated searches via scheduler
+3. **Query Format**: Supports arXiv field prefixes (ti, au, abs, cat, etc.), result limits (1-1000), sort options (r/s/l), and date ranges
+
+### Webhook Flow
+1. Discord sends POST to `/interactions` endpoint
+2. Signature verification using `DISCORD_PUBLIC_KEY`
+3. Query parsing via `parse()` function
+4. arXiv API search execution
+5. Response formatting and return to Discord
+
+### Scheduler Flow
+1. Cron job hits `/scheduler` endpoint (or runs scheduler.py directly)
+2. Fetches all channels starting with "auto" via Discord API
+3. Uses channel topic as search query with date range (48-72 hours ago)
+4. Posts results directly to channels via Discord API
+
+### Deployment Options
+- **Railway**: Use `railway.toml` and `Dockerfile`
+- **Vercel**: Use `vercel.json` with serverless functions
+- **Any container platform**: Use `Dockerfile`
+
+### Time Handling
+All date inputs are treated as JST (UTC-9). Auto-processing searches papers from 48-72 hours ago to account for arXiv's publication schedule.
