@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Environment Variables
 - `DISCORD_BOT_TOKEN` - Discord bot token
 - `DISCORD_PUBLIC_KEY` - Discord application public key (for webhook signature verification)
+- `DISCORD_APPLICATION_ID` - Discord application ID (for followup messages)
 - `PORT` - Server port (default: 8000)
 
 ## Architecture
@@ -65,6 +66,7 @@ All date inputs are treated as JST (UTC-9). Auto-processing searches papers from
 - Interactions Endpoint URL validated and authenticated
 - Bot permissions: Send Messages, Use Slash Commands
 - Environment variables properly loaded and verified
+- **Important**: DISCORD_APPLICATION_ID required for deferred responses
 
 ### Setup Complete (2025-06-14)
 1. **Slash Command Registration**: ✅ `/arxiv` command registered globally
