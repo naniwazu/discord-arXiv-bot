@@ -24,7 +24,6 @@ This is a serverless Discord bot that searches and shares arXiv research papers 
 1. **webhook_server.py** - FastAPI server handling Discord slash command interactions
 2. **scheduler.py** - Separate service for auto-channel processing
 3. **tools.py** - Query parser for arXiv search syntax
-4. **slash_bot.py** - Traditional Discord.py bot (alternative implementation)
 
 ### Key Features
 1. **Slash Commands**: `/arxiv query` - Interactive search with slash commands
@@ -69,7 +68,11 @@ All date inputs are treated as JST (UTC-9). Auto-processing searches papers from
 
 ### Setup Complete (2025-06-14)
 1. **Slash Command Registration**: ✅ `/arxiv` command registered globally
-2. **Auto-Search Cron**: Configure Railway cron job with `0 21 * * *` to hit `/scheduler` endpoint
+2. **Auto-Search Cron**: 
+   - Option A: Use Railway's native Cron Schedule feature in service settings
+   - Set cron expression: `0 21 * * *` (21:00 UTC daily)
+   - Create separate service that runs `python src/scheduler.py` and exits
+   - Option B: Keep webhook server running and use external service to call `/scheduler` endpoint
 3. **Bot Status**: Webhook bot appears "offline" in Discord - this is normal for interaction-based bots
 
 ### Helper Scripts
@@ -84,3 +87,13 @@ All date inputs are treated as JST (UTC-9). Auto-processing searches papers from
 - Railway logs show startup and request information
 - Bot invite link: Use the URL from `check_commands.py` output
 - If slash commands don't appear: Re-invite bot, wait a few minutes, refresh Discord (Ctrl+R)
+
+### Railway Cron Schedule Setup
+1. **For Native Railway Cron**:
+   - Create new Railway service for scheduler
+   - In service Settings, set Cron Schedule: `0 21 * * *`
+   - Set Start Command: `python src/scheduler.py`
+   - Add environment variable: `DISCORD_BOT_TOKEN`
+   - Service must exit after task completion
+2. **Important**: Cron runs are based on UTC time
+3. **Minimum interval**: 5 minutes between executions

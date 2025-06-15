@@ -6,6 +6,7 @@ startCommand = "python src/webhook_server.py"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
+region = "asia-southeast1"
 
 [[deploy.variables]]
 name = "PORT"
