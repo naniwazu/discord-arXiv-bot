@@ -90,6 +90,34 @@ All date inputs are treated as JST (UTC-9). Auto-processing searches papers from
 - Bot invite link: Use the URL from `check_commands.py` output
 - If slash commands don't appear: Re-invite bot, wait a few minutes, refresh Discord (Ctrl+R)
 
+### Recent Updates (2025-01-15)
+1. **Deferred Response Implementation**
+   - Switched from immediate response (type 4) to deferred response (type 5)
+   - Solves Discord's 3-second timeout issue completely
+   - Allows unlimited search results
+   - Requires DISCORD_APPLICATION_ID environment variable
+
+2. **Getting Discord Application ID**
+   - Go to https://discord.com/developers/applications
+   - Select your application
+   - Copy Application ID from General Information tab
+   - Add to Railway environment variables
+
+3. **Current Architecture**
+   - Webhook server immediately returns "thinking..." response
+   - Background task fetches arXiv results without time limit
+   - Results sent via Discord Followup API
+   - Multiple messages automatically split if needed
+
+### Deployment Checklist
+1. Ensure all environment variables are set in Railway:
+   - DISCORD_BOT_TOKEN
+   - DISCORD_PUBLIC_KEY  
+   - DISCORD_APPLICATION_ID (required for deferred responses)
+2. Region should be set to asia-southeast1 (Singapore) for Japan users
+3. For scheduler service: Set Cron Schedule to `0 21 * * *` in Railway settings
+4. Run `uvx ruff check src/` before deployment to check code quality
+
 ### Railway Cron Schedule Setup
 1. **For Native Railway Cron**:
    - Create new Railway service for scheduler
