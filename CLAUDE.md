@@ -153,3 +153,44 @@ uv run python src/webhook_server.py
 uv run pytest tests/
 uv run ruff check src/
 ```
+
+## Git Workflow Best Practices
+
+### Destructive Operations Safety
+**CRITICAL**: Always confirm before executing destructive git operations that could lose work.
+
+#### High-Risk Commands Requiring Confirmation
+- `git reset --hard` - **ALWAYS confirm branch and backup status first**
+- `git push --force-with-lease` - Verify you're on the correct branch
+- `git rebase -i` - Ensure you understand the scope of changes
+- `git clean -fd` - Could delete untracked files permanently
+
+#### Pre-Destructive Operation Checklist
+1. **Verify Current Branch**: `git branch` - Make sure you're on the intended branch
+2. **Check Remote Status**: `git status` - Ensure work is pushed or backed up
+3. **List Recent Commits**: `git log --oneline -5` - Know what you're potentially losing
+4. **Backup if Needed**: Create backup branch if work isn't pushed
+5. **Double-Check Target**: For reset operations, verify the target commit hash
+
+#### Safe Recovery Practices
+- **Remote Backup**: Ensure important work is pushed to remote before destructive operations
+- **Reflog Usage**: `git reflog` can recover lost commits (limited time window)
+- **Branch Protection**: Use feature branches; keep main branch stable
+
+#### Example Safe Reset Workflow
+```bash
+# BEFORE destructive operation
+git branch                          # Confirm current branch
+git status                         # Check if work is committed/pushed
+git log --oneline -5              # See recent commits
+git push origin feature-branch    # Backup current work
+
+# THEN proceed with reset
+git reset --hard <target-commit>
+```
+
+#### Lessons Learned (2025-01-16)
+- **Always push feature branch work before reset operations**
+- **Confirm target branch before running `git reset --hard`**
+- **Use `git fetch origin` + `git reset --hard origin/branch` to restore from remote**
+- **Destructive operations on wrong branch can lose hours of work instantly**
