@@ -9,26 +9,57 @@ arXiv上のプレプリントを検索・自動取得するためのbotです。
 /arxiv query: [検索クエリ]
 ```
 
-クエリで指定できる内容は以下（順不同）です。
-* 検索ワード  「(タグ):(検索ワード)」の形式で入力してください。
-  * タグの種類は[こちら](https://info.arxiv.org/help/api/user-manual.html#:~:text=This%20returns%20nine%20results.%20The%20following%20table%20lists%20the%20field%20prefixes%20for%20all%20the%20fields%20that%20can%20be%20searched) を参照ください。
-  * 検索ワードはカンマ区切りで、スペースを含めず入力してください。
-  * 複数のタグを併用して検索することも可能です。現在はAND検索のみに対応しています。
-  * `cat`等は完全一致検索なので、適宜ワイルドカード`*`を用いて検索してください。（例：`cat:cond-mat*`）
-* 表示件数
-  * 1～1000までを入力でき、それ以外の入力は無視されます。
-  * デフォルトは10件です。
-* 表示順
-  * アルファベット1文字で、` r:relevance, s: submitted date, l:last updated date`に対応します。
-  * デフォルトは`s`です。
-* 期間
-  * `(since|until):(YYYYDDMM|YYYYDDMMhhmm|YYYYDDMMhhmmss)`の形式で指定してください。JSTで`since`以降/`until`以前の論文を検索します。両方指定しても、片方のみでも問題ありません。
+### クエリ構文
+
+#### 基本的な検索
+* **キーワード検索**: `quantum computing` (デフォルトでタイトル検索)
+* **フィールド指定**:
+  * `@author` - 著者検索
+  * `#category` - カテゴリ検索 (例: `#cs.AI`, `#physics`)
+  * `*keyword` - 全フィールド検索
+  * `$keyword` - アブストラクト検索
+  * `"phrase search"` - フレーズ検索
+
+#### 高度な検索 (OR/NOT演算子)
+* **OR検索**: `quantum | neural` (quantumまたはneural)
+* **NOT検索**: `quantum -classical` (quantumだが、classicalは除外)
+* **複合検索**: `(bert | gpt) @hinton -@lecun` (bertまたはgptで、hintonが著者、lecunは除外)
+
+#### グループ化と括弧
+* **括弧グループ**: `(quantum | neural) computing` 
+* **フィールドグループ**: `@(hinton lecun)` → 両方が著者の論文
+* **arXivスタイル**: `ti:(quantum computing)` - タイトルに両方のキーワード
+
+#### 表示オプション
+* **件数**: `50` (1-1000件、デフォルト10件)
+* **ソート**: 
+  * `s`/`sd` - 投稿日降順 (デフォルト)
+  * `sa` - 投稿日昇順
+  * `r`/`rd` - 関連度降順
+  * `ra` - 関連度昇順
+  * `l`/`ld` - 更新日降順
+  * `la` - 更新日昇順
 
 ## 使用例
+
+### 基本的な検索
 ```
-/arxiv query: ti:attention,is,all,you,need
-/arxiv query: cat:cs.CL 20 r
-/arxiv query: au:Hinton since:20240101
+/arxiv query: quantum computing
+/arxiv query: @hinton #cs.AI 20 ra
+/arxiv query: "attention is all you need" @vaswani
+```
+
+### 高度な検索
+```
+/arxiv query: (bert | gpt | t5) @google 50 sa
+/arxiv query: quantum -classical @(hinton lecun)
+/arxiv query: (#cs.AI | #cs.LG) machine learning -survey
+```
+
+### 複雑なクエリ
+```
+/arxiv query: (quantum | neural) computing @hinton -(classical | traditional) 30 r
+/arxiv query: ti:(transformer | attention) au:(vaswani | hinton) #cs.AI
 ```
 
 ## 自動取得について
