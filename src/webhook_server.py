@@ -14,7 +14,6 @@ from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
 from query_interface import parse
-
 from query_parser import QueryParser
 
 if TYPE_CHECKING:
@@ -32,6 +31,7 @@ app = FastAPI()
 
 class ArxivWebhookHandler:
     MESSAGE_THRESHOLD = 2000
+    DEBUG_LOG_PAPER_COUNT = 5  # Number of papers to log for debugging
 
     def __init__(self) -> None:
         # Check for Discord credentials
@@ -137,48 +137,20 @@ class ArxivWebhookHandler:
                 )
                 return
 
-            # Handle case where first message is empty but we have query info
-            first_message_sent = False
-            if message_list and not message_list[0].strip() and query_info:
-                await self._edit_deferred_response(
-                    interaction_data["token"],
-                    query_info.rstrip(),
-                )
-                first_message_sent = True
-                # Remove the empty first message from the list
-                message_list = message_list[1:]
-
-            # Send all messages as followups
-            logger.info("Processing %d messages", len(message_list))
+            # Send all messages
             for i, message in enumerate(message_list):
-                logger.info(
-                    "Processing message %d: %d chars, empty: %s",
-                    i + 1,
-                    len(message),
-                    not message.strip(),
-                )
                 if message.strip():
-                    # Include query info in the first message only if it hasn't been sent
-                    content = (
-                        query_info + message.strip()
-                        if i == 0 and not first_message_sent
-                        else message.strip()
-                    )
-                    logger.info(
-                        "Sending message %d with length %d, content preview: %s",
-                        i + 1,
-                        len(content),
-                        content[:100].replace("\n", " "),
-                    )
+                    # Include query info in the first message
+                    content = query_info + message.strip() if i == 0 else message.strip()
                     try:
-                        # For first message (if not already sent), edit the deferred response
-                        if i == 0 and not first_message_sent:
+                        # For first message, edit the deferred response
+                        if i == 0:
                             await self._edit_deferred_response(
                                 interaction_data["token"],
                                 content,
                             )
                         else:
-                            # For subsequent messages (or all if first was already sent), send as followups
+                            # For subsequent messages, send as followups
                             await self._send_followup_message(
                                 interaction_data["token"],
                                 content,
@@ -212,7 +184,8 @@ class ArxivWebhookHandler:
         # Messages should already be properly sized by _process_results
         if len(content) > self.MESSAGE_THRESHOLD:
             logger.warning(
-                "Deferred response content exceeds Discord limit: %d chars. This should not happen.",
+                "Deferred response content exceeds Discord limit: %d chars. "
+                "This should not happen.",
                 len(content),
             )
 
@@ -280,24 +253,14 @@ class ArxivWebhookHandler:
         message_list = [""]
         count = 0
 
-        # Adjust threshold for first message to account for query info
-        # Ensure minimum threshold to avoid pushing too many papers to second message
-        first_message_threshold = max(
-            self.MESSAGE_THRESHOLD - query_info_length,
-            self.MESSAGE_THRESHOLD // 2,  # At least half the normal threshold
-        )
-
-        logger.info(
-            "First message threshold: %d, Normal threshold: %d",
-            first_message_threshold,
-            self.MESSAGE_THRESHOLD,
-        )
+        # Calculate threshold for first message accounting for query info
+        first_message_threshold = self.MESSAGE_THRESHOLD - query_info_length
 
         for result in results:
             count += 1
             paper_content = f"**[{count}] {result.title}**\n<{result}>\n"
 
-            # Determine current threshold
+            # Use different threshold for first message vs subsequent messages
             is_first_message = len(message_list) == 1 and not message_list[0]
             current_threshold = (
                 first_message_threshold if is_first_message else self.MESSAGE_THRESHOLD
@@ -313,7 +276,7 @@ class ArxivWebhookHandler:
                 # If current message is empty, we must add this paper (single paper too long case)
                 if not current_message.strip():
                     message_list[-1] += paper_content
-                    if count <= 5:  # Log first 5 papers
+                    if count <= self.DEBUG_LOG_PAPER_COUNT:
                         logger.info(
                             "Paper %d: Added to message %d (empty message case)",
                             count,
@@ -323,14 +286,14 @@ class ArxivWebhookHandler:
                     # Current message has content and adding this paper would exceed limit
                     # Carry over this complete paper to the next message
                     message_list.append(paper_content)
-                    if count <= 5:  # Log first 5 papers
+                    if count <= self.DEBUG_LOG_PAPER_COUNT:
                         logger.info(
-                            "Paper %d: Carried over to message %d", count, len(message_list)
+                            "Paper %d: Carried over to message %d", count, len(message_list),
                         )
             else:
                 # Paper fits completely in current message
                 message_list[-1] += paper_content
-                if count <= 5:  # Log first 5 papers
+                if count <= self.DEBUG_LOG_PAPER_COUNT:
                     logger.info("Paper %d: Added to message %d", count, len(message_list))
 
         # Add summary at the end
