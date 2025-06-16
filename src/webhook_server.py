@@ -251,7 +251,7 @@ class ArxivWebhookHandler:
     def _process_results(
         self, results: Generator[arxiv.Result], query_info_length: int = 0,
     ) -> list[str]:
-        """Process arXiv results into Discord messages.
+        """Process arXiv results into Discord messages with carry-over logic.
 
         Args:
             results: Generator of arXiv results
@@ -266,32 +266,42 @@ class ArxivWebhookHandler:
 
         for result in results:
             count += 1
-            content = f"**[{count}] {result.title}**\n<{result}>\n"
+            paper_content = f"**[{count}] {result.title}**\n<{result}>\n"
 
-            # Use different threshold for first message
+            # Determine current threshold
             is_first_message = len(message_list) == 1 and not message_list[0]
             current_threshold = (
                 first_message_threshold if is_first_message else self.MESSAGE_THRESHOLD
             )
 
-            # Check if adding this content would exceed the threshold
-            if len(message_list[-1]) + len(content) > current_threshold:
-                # If the current message is not empty, start a new message
-                if message_list[-1].strip():
-                    message_list.append(content)
+            # Try to add paper to current message
+            current_message = message_list[-1]
+
+            # Check if adding this paper would exceed the threshold
+            would_exceed = len(current_message) + len(paper_content) > current_threshold
+
+            if would_exceed:
+                # If current message is empty, we must add this paper (single paper too long case)
+                if not current_message.strip():
+                    message_list[-1] += paper_content
                 else:
-                    # If current message is empty but content is too long, add it anyway
-                    message_list[-1] += content
+                    # Current message has content and adding this paper would exceed limit
+                    # Carry over this complete paper to the next message
+                    message_list.append(paper_content)
             else:
-                message_list[-1] += content
+                # Paper fits completely in current message
+                message_list[-1] += paper_content
 
         # Add summary at the end
         if message_list and count > 0:
             summary = f"\n*Found {count} results*"
-            # If adding summary would exceed threshold, put it in a new message
+
+            # Try to add summary to last message, carry over if needed
             if len(message_list[-1]) + len(summary) > self.MESSAGE_THRESHOLD:
+                # Summary doesn't fit, create new message for it
                 message_list.append(summary)
             else:
+                # Summary fits in last message
                 message_list[-1] += summary
 
         return message_list
