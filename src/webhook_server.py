@@ -15,12 +15,7 @@ from nacl.signing import VerifyKey
 
 from query_interface import parse
 
-# Try to import new parser for enhanced functionality
-try:
-    from query_parser import QueryParser
-    USE_NEW_PARSER = True
-except ImportError:
-    USE_NEW_PARSER = False
+from query_parser import QueryParser
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -112,8 +107,8 @@ class ArxivWebhookHandler:
             search_query = parse(query_text)
             query_info = ""
 
-            # Add query transformation info if new parser is available
-            if USE_NEW_PARSER and search_query is not None:
+            # Add query transformation info
+            if search_query is not None:
                 parser = QueryParser()
                 result = parser.parse(query_text)
                 if result.success and result.search:
@@ -186,13 +181,10 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
-        # Truncate content if it exceeds Discord's limit
+        # Messages should already be properly sized by _process_results
         if len(content) > self.MESSAGE_THRESHOLD:
-            original_length = len(content)
-            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
             logger.warning(
-                "Deferred response truncated from %d to %d chars for Discord limit",
-                original_length,
+                "Deferred response content exceeds Discord limit: %d chars. This should not happen.",
                 len(content),
             )
 
@@ -220,13 +212,10 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
-        # Truncate content if it exceeds Discord's limit
+        # Messages should already be properly sized by _process_results
         if len(content) > self.MESSAGE_THRESHOLD:
-            original_length = len(content)
-            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
             logger.warning(
-                "Followup content truncated from %d to %d chars for Discord limit",
-                original_length,
+                "Followup message content exceeds Discord limit: %d chars. This should not happen.",
                 len(content),
             )
 
@@ -249,7 +238,9 @@ class ArxivWebhookHandler:
                 )
 
     def _process_results(
-        self, results: Generator[arxiv.Result], query_info_length: int = 0,
+        self,
+        results: Generator[arxiv.Result],
+        query_info_length: int = 0,
     ) -> list[str]:
         """Process arXiv results into Discord messages with carry-over logic.
 
@@ -319,6 +310,7 @@ class HandlerSingleton:
             cls._instance = ArxivWebhookHandler()
         return cls._instance
 
+
 def get_handler() -> ArxivWebhookHandler:
     """Get webhook handler instance."""
     return HandlerSingleton.get_instance()
@@ -326,7 +318,8 @@ def get_handler() -> ArxivWebhookHandler:
 
 @app.post("/interactions")
 async def interactions_endpoint(
-    request: Request, background_tasks: BackgroundTasks,
+    request: Request,
+    background_tasks: BackgroundTasks,
 ) -> JSONResponse:
     """Discord interactions endpoint."""
     handler = get_handler()
@@ -382,6 +375,7 @@ async def scheduler_endpoint() -> dict[str, str]:
     """Scheduler endpoint for auto channel processing."""
     try:
         from scheduler import ArxivScheduler
+
         scheduler = ArxivScheduler()
         await scheduler.run_scheduler()
     except Exception as e:
@@ -393,6 +387,7 @@ async def scheduler_endpoint() -> dict[str, str]:
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", "8000"))
     logger.info("Starting server on port %d", port)
     # Bind to all interfaces for Docker/Railway deployment
