@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import datetime
 import logging
+from dataclasses import dataclass
+from typing import NamedTuple
 
 import arxiv
 
@@ -15,8 +17,21 @@ except ImportError:
     USE_NEW_PARSER = False
     logger.warning("New query parser not available, using legacy implementation")
 
+# Constants
 DEFAULT_RESULT_COUNT: int = 10
 RESULT_COUNT_LIMIT: int = 1000
+JST_OFFSET_HOURS: int = -9
+
+# Date format constants
+DATE_FORMAT_YYYYMMDD = "%Y%m%d"
+DATE_FORMAT_YYYYMMDDHHMM = "%Y%m%d%H%M"
+DATE_FORMAT_YYYYMMDDHHMMSS = "%Y%m%d%H%M%S"
+
+# Date string length constants
+YYYYMMDD_LENGTH = 8
+YYYYMMDDHHMM_LENGTH = 12
+YYYYMMDDHHMMSS_LENGTH = 14
+
 SORTBY_DICT: dict[str, arxiv.SortCriterion] = {
     "L": arxiv.SortCriterion.LastUpdatedDate,
     "l": arxiv.SortCriterion.LastUpdatedDate,
@@ -25,7 +40,8 @@ SORTBY_DICT: dict[str, arxiv.SortCriterion] = {
     "S": arxiv.SortCriterion.SubmittedDate,
     "s": arxiv.SortCriterion.SubmittedDate,
 }
-search_field: set[str] = {
+
+SEARCH_FIELDS: set[str] = {
     "ti",
     "au",
     "abs",
@@ -38,23 +54,30 @@ search_field: set[str] = {
 }
 
 DEFAULT_SINCE: datetime.datetime = datetime.datetime(
-    1900,
-    1,
-    1,
-    0,
-    0,
-    0,
-    tzinfo=datetime.timezone.utc,
+    1900, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc,
 )
 DEFAULT_UNTIL: datetime.datetime = datetime.datetime(
-    2100,
-    1,
-    1,
-    0,
-    0,
-    0,
-    tzinfo=datetime.timezone.utc,
+    2100, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc,
 )
+
+
+class DateParseResult(NamedTuple):
+    """Result of date parsing operation."""
+
+    success: bool
+    datetime_obj: datetime.datetime | None = None
+    error: str | None = None
+
+
+@dataclass
+class ParsedQuery:
+    """Represents a parsed search query."""
+
+    queries: list[str]
+    max_results: int = DEFAULT_RESULT_COUNT
+    since: datetime.datetime = DEFAULT_SINCE
+    until: datetime.datetime = DEFAULT_UNTIL
+    sort_by: arxiv.SortCriterion = arxiv.SortCriterion.SubmittedDate
 
 
 def parse(search_query: str) -> arxiv.Search | None:
@@ -130,7 +153,7 @@ def _parse_legacy(search_query: str) -> arxiv.Search | None:
                 else:
                     return None
                 continue
-            if prefix not in search_field:
+            if prefix not in SEARCH_FIELDS:
                 continue
             keywords = body.split(",")
             queries.extend([f"{prefix}:{keyword}" for keyword in keywords])
