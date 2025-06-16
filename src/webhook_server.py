@@ -137,20 +137,48 @@ class ArxivWebhookHandler:
                 )
                 return
 
+            # Handle case where first message is empty but we have query info
+            first_message_sent = False
+            if message_list and not message_list[0].strip() and query_info:
+                await self._edit_deferred_response(
+                    interaction_data["token"],
+                    query_info.rstrip(),
+                )
+                first_message_sent = True
+                # Remove the empty first message from the list
+                message_list = message_list[1:]
+
             # Send all messages as followups
+            logger.info("Processing %d messages", len(message_list))
             for i, message in enumerate(message_list):
+                logger.info(
+                    "Processing message %d: %d chars, empty: %s",
+                    i + 1,
+                    len(message),
+                    not message.strip(),
+                )
                 if message.strip():
-                    # Include query info in the first message
-                    content = query_info + message.strip() if i == 0 else message.strip()
+                    # Include query info in the first message only if it hasn't been sent
+                    content = (
+                        query_info + message.strip()
+                        if i == 0 and not first_message_sent
+                        else message.strip()
+                    )
+                    logger.info(
+                        "Sending message %d with length %d, content preview: %s",
+                        i + 1,
+                        len(content),
+                        content[:100].replace("\n", " "),
+                    )
                     try:
-                        # For first message, edit the deferred response
-                        if i == 0:
+                        # For first message (if not already sent), edit the deferred response
+                        if i == 0 and not first_message_sent:
                             await self._edit_deferred_response(
                                 interaction_data["token"],
                                 content,
                             )
                         else:
-                            # For subsequent messages, send as followups
+                            # For subsequent messages (or all if first was already sent), send as followups
                             await self._send_followup_message(
                                 interaction_data["token"],
                                 content,
@@ -253,7 +281,17 @@ class ArxivWebhookHandler:
         count = 0
 
         # Adjust threshold for first message to account for query info
-        first_message_threshold = self.MESSAGE_THRESHOLD - query_info_length
+        # Ensure minimum threshold to avoid pushing too many papers to second message
+        first_message_threshold = max(
+            self.MESSAGE_THRESHOLD - query_info_length,
+            self.MESSAGE_THRESHOLD // 2,  # At least half the normal threshold
+        )
+
+        logger.info(
+            "First message threshold: %d, Normal threshold: %d",
+            first_message_threshold,
+            self.MESSAGE_THRESHOLD,
+        )
 
         for result in results:
             count += 1
@@ -275,13 +313,25 @@ class ArxivWebhookHandler:
                 # If current message is empty, we must add this paper (single paper too long case)
                 if not current_message.strip():
                     message_list[-1] += paper_content
+                    if count <= 5:  # Log first 5 papers
+                        logger.info(
+                            "Paper %d: Added to message %d (empty message case)",
+                            count,
+                            len(message_list),
+                        )
                 else:
                     # Current message has content and adding this paper would exceed limit
                     # Carry over this complete paper to the next message
                     message_list.append(paper_content)
+                    if count <= 5:  # Log first 5 papers
+                        logger.info(
+                            "Paper %d: Carried over to message %d", count, len(message_list)
+                        )
             else:
                 # Paper fits completely in current message
                 message_list[-1] += paper_content
+                if count <= 5:  # Log first 5 papers
+                    logger.info("Paper %d: Added to message %d", count, len(message_list))
 
         # Add summary at the end
         if message_list and count > 0:
@@ -294,6 +344,16 @@ class ArxivWebhookHandler:
             else:
                 # Summary fits in last message
                 message_list[-1] += summary
+
+        # Debug: Log message list structure
+        logger.info("Generated %d messages:", len(message_list))
+        for i, msg in enumerate(message_list):
+            logger.info(
+                "Message %d: %d chars, starts with: %s",
+                i + 1,
+                len(msg),
+                msg[:50].replace("\n", " ") if msg else "[EMPTY]",
+            )
 
         return message_list
 
