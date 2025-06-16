@@ -148,22 +148,31 @@ class ArxivWebhookHandler:
                     # Include query info in the first message
                     content = query_info + message.strip() if i == 0 else message.strip()
                     
-                    # For first message, edit the deferred response
-                    if i == 0:
-                        await self._edit_deferred_response(
-                            interaction_data["token"],
-                            content,
-                        )
-                    else:
-                        # For subsequent messages, send as followups
-                        await self._send_followup_message(
-                            interaction_data["token"],
-                            content,
-                        )
-                    
+                    try:
+                        # For first message, edit the deferred response
+                        if i == 0:
+                            await self._edit_deferred_response(
+                                interaction_data["token"],
+                                content,
+                            )
+                        else:
+                            # For subsequent messages, send as followups
+                            await self._send_followup_message(
+                                interaction_data["token"],
+                                content,
+                            )
+                    except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException):
+                        logger.exception("Timeout sending message %d", i + 1)
+                        # Continue with next message instead of failing completely
+                        continue
+                    except Exception:
+                        logger.exception("Failed to send message %d", i + 1)
+                        # Continue with next message instead of failing completely
+                        continue
+
                     # Longer delay between messages to avoid rate limiting
                     if i < len(message_list) - 1:
-                        await asyncio.sleep(1.0)
+                        await asyncio.sleep(1.5)
 
         except Exception as e:
             logger.exception("Error processing arxiv command")
@@ -178,6 +187,11 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
+        # Truncate content if it exceeds Discord's limit
+        if len(content) > self.MESSAGE_THRESHOLD:
+            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
+            logger.warning("Deferred response content truncated to fit Discord's character limit")
+
         url = f"https://discord.com/api/v10/webhooks/{self.application_id}/{interaction_token}/messages/@original"
 
         headers = {
@@ -187,7 +201,7 @@ class ArxivWebhookHandler:
 
         data = {"content": content}
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.patch(url, headers=headers, json=data)
             if response.status_code != HTTP_STATUS_OK:
                 logger.error(
@@ -202,6 +216,11 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
+        # Truncate content if it exceeds Discord's limit
+        if len(content) > self.MESSAGE_THRESHOLD:
+            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
+            logger.warning("Followup content truncated to fit Discord's character limit")
+
         url = f"https://discord.com/api/v10/webhooks/{self.application_id}/{interaction_token}"
 
         headers = {
@@ -211,7 +230,7 @@ class ArxivWebhookHandler:
 
         data = {"content": content}
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(url, headers=headers, json=data)
             if response.status_code != HTTP_STATUS_OK:
                 logger.error(
