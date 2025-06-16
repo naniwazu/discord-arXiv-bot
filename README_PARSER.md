@@ -69,9 +69,12 @@ tests/
 
 ## テスト方法
 ```bash
-# 簡易テスト
-python3 test_parser_simple.py
+# 全テスト実行
+uv run pytest tests/test_query_parser/
 
-# poetryがある環境では
-poetry run pytest tests/test_query_parser/
+# 特定テストのみ
+uv run pytest tests/test_query_parser/test_parser.py -v
+
+# カバレッジ付きテスト
+uv run pytest tests/test_query_parser/ --cov=src/query_parser
 ```
