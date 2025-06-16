@@ -99,7 +99,7 @@ class ArxivWebhookHandler:
             query_param = next((opt for opt in options if opt["name"] == "query"), None)
 
             if not query_param:
-                await self._send_followup_message(
+                await self._edit_deferred_response(
                     interaction_data["token"],
                     "Query parameter is required",
                 )
@@ -124,7 +124,7 @@ class ArxivWebhookHandler:
                     )
 
             if search_query is None:
-                await self._send_followup_message(
+                await self._edit_deferred_response(
                     interaction_data["token"],
                     "Invalid query format",
                 )
@@ -136,7 +136,7 @@ class ArxivWebhookHandler:
             message_list = self._process_results(results)
 
             if not message_list or not any(msg.strip() for msg in message_list):
-                await self._send_followup_message(
+                await self._edit_deferred_response(
                     interaction_data["token"],
                     query_info + "No results found",
                 )
@@ -147,20 +147,54 @@ class ArxivWebhookHandler:
                 if message.strip():
                     # Include query info in the first message
                     content = query_info + message.strip() if i == 0 else message.strip()
-                    await self._send_followup_message(
-                        interaction_data["token"],
-                        content,
-                    )
-                    # Small delay between messages to avoid rate limiting
+                    
+                    # For first message, edit the deferred response
+                    if i == 0:
+                        await self._edit_deferred_response(
+                            interaction_data["token"],
+                            content,
+                        )
+                    else:
+                        # For subsequent messages, send as followups
+                        await self._send_followup_message(
+                            interaction_data["token"],
+                            content,
+                        )
+                    
+                    # Longer delay between messages to avoid rate limiting
                     if i < len(message_list) - 1:
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(1.0)
 
         except Exception as e:
             logger.exception("Error processing arxiv command")
-            await self._send_followup_message(
+            await self._edit_deferred_response(
                 interaction_data["token"],
                 f"An error occurred: {e!s}",
             )
+
+    async def _edit_deferred_response(self, interaction_token: str, content: str) -> None:
+        """Edit the deferred response via Discord API."""
+        if not self.bot_token or not self.application_id:
+            logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
+            return
+
+        url = f"https://discord.com/api/v10/webhooks/{self.application_id}/{interaction_token}/messages/@original"
+
+        headers = {
+            "Authorization": f"Bot {self.bot_token}",
+            "Content-Type": "application/json",
+        }
+
+        data = {"content": content}
+
+        async with httpx.AsyncClient() as client:
+            response = await client.patch(url, headers=headers, json=data)
+            if response.status_code != HTTP_STATUS_OK:
+                logger.error(
+                    "Failed to edit deferred response: %s - %s",
+                    response.status_code,
+                    response.text,
+                )
 
     async def _send_followup_message(self, interaction_token: str, content: str) -> None:
         """Send followup message via Discord API."""
@@ -181,7 +215,9 @@ class ArxivWebhookHandler:
             response = await client.post(url, headers=headers, json=data)
             if response.status_code != HTTP_STATUS_OK:
                 logger.error(
-                    "Failed to send followup: %s - %s", response.status_code, response.text,
+                    "Failed to send followup: %s - %s",
+                    response.status_code,
+                    response.text,
                 )
 
     def _process_results(self, results: Generator[arxiv.Result]) -> list[str]:
