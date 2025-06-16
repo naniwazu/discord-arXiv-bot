@@ -4,7 +4,7 @@
 
 ### Prerequisites
 - Python 3.10+
-- Poetry (Python package manager)
+- UV (Ultra-fast Python package manager)
 
 ### Development Environment Setup
 
@@ -14,98 +14,92 @@
    cd discord-arxiv-bot
    ```
 
-2. **Install Poetry** (if not already installed)
+2. **Install UV** (if not already installed)
    ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-3. **Install dependencies**
+3. **Set up development environment**
    ```bash
-   poetry install --with dev
-   ```
-
-   Or use the setup script:
-   ```bash
-   ./scripts/setup_dev.sh
+   # Create virtual environment and install dependencies
+   uv venv
+   uv sync
    ```
 
 4. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Discord credentials
-   ```
+   Environment variables are documented in CLAUDE.md:
+   - `DISCORD_BOT_TOKEN` - Discord bot token
+   - `DISCORD_PUBLIC_KEY` - Discord application public key
+   - `DISCORD_APPLICATION_ID` - Discord application ID
+   - `PORT` - Server port (default: 8000)
 
 ## Testing
 
 ### Run all tests
 ```bash
-make test
+uv run pytest tests/ -v
 ```
 
 ### Run tests with coverage
 ```bash
-make test-cov
+uv run pytest tests/ --cov=src --cov-report=term-missing --cov-report=html
 ```
 
 ### Run specific test modules
 ```bash
 # Test only the parser
-make test-parser
+uv run pytest tests/test_query_parser/ -v
 
 # Test only the tokenizer
-poetry run pytest tests/test_query_parser/test_tokenizer.py -v
+uv run pytest tests/test_query_parser/test_tokenizer.py -v
 
 # Run integration tests
-make test-integration
+uv run pytest tests/test_query_parser/test_integration.py -v
 ```
 
 ### Run tests for different phases
 ```bash
 # Phase 1 features only (current implementation)
-poetry run pytest tests/ -v -k "not phase2 and not phase3"
+uv run pytest tests/ -v -k "not phase2 and not phase3"
 
 # Include Phase 2 tests (when implemented)
-poetry run pytest tests/ -v -k "not phase3"
+uv run pytest tests/ -v -k "not phase3"
 ```
 
 ## Code Quality
 
 ### Linting
 ```bash
-make lint
+uv run ruff check src/ tests/
 ```
 
 ### Auto-formatting
 ```bash
-make format
+uv run ruff format src/ tests/
 ```
 
 ### Type checking (if mypy is added)
 ```bash
-poetry run mypy src/
+uv run mypy src/
 ```
 
 ## Running Locally
 
 ### Run webhook server
 ```bash
-make run-webhook
-# or
-poetry run python src/webhook_server.py
+uv run python src/webhook_server.py
 ```
 
 ### Run scheduler
 ```bash
-make run-scheduler
-# or
-poetry run python src/scheduler.py
+uv run python src/scheduler.py
 ```
 
 ### Test with ngrok (for Discord webhook testing)
 ```bash
 # Install ngrok if needed
 # Run webhook server
-make run-webhook
+uv run python src/webhook_server.py
 
 # In another terminal
 ngrok http 8000
@@ -153,7 +147,9 @@ ngrok http 8000
 
 2. Make your changes and ensure tests pass
    ```bash
-   make dev-test  # Runs lint and test
+   # Run linting and tests
+   uv run ruff check src/ tests/
+   uv run pytest tests/ -v
    ```
 
 3. Commit with descriptive messages
@@ -169,13 +165,13 @@ ngrok http 8000
 ### Phase 2 Implementation (Operators)
 1. Update `transformer.py` to handle OR/NOT operators
 2. Remove `@pytest.mark.skip` from Phase 2 tests
-3. Run Phase 2 tests: `poetry run pytest tests/test_query_parser/test_phase2_features.py`
+3. Run Phase 2 tests: `uv run pytest tests/test_query_parser/test_phase2_features.py`
 
 ### Phase 3 Implementation (Parentheses)
 1. Enhance tokenizer for parentheses handling
 2. Implement recursive parsing in transformer
 3. Remove `@pytest.mark.skip` from Phase 3 tests
-4. Run Phase 3 tests: `poetry run pytest tests/test_query_parser/test_phase3_features.py`
+4. Run Phase 3 tests: `uv run pytest tests/test_query_parser/test_phase3_features.py`
 
 ## Debugging
 
@@ -196,7 +192,7 @@ The webhook server shows transformed queries in Discord:
 
 ### Test with large queries
 ```bash
-poetry run pytest tests/test_query_parser/test_edge_cases.py::TestEdgeCases::test_very_long_query -v
+uv run pytest tests/test_query_parser/test_edge_cases.py::TestEdgeCases::test_very_long_query -v
 ```
 
 ### Profile parser performance
