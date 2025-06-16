@@ -57,9 +57,10 @@ class ArxivWebhookHandler:
         try:
             verify_key = VerifyKey(bytes.fromhex(self.public_key))
             verify_key.verify(timestamp.encode() + body, bytes.fromhex(signature))
-            return True
         except BadSignatureError:
             return False
+        else:
+            return True
 
     async def handle_interaction(
         self,
@@ -204,14 +205,21 @@ class ArxivWebhookHandler:
         return message_list
 
 
-# Global handler instance
-handler = None
+class HandlerSingleton:
+    """Singleton pattern for webhook handler."""
+
+    _instance: ArxivWebhookHandler | None = None
+
+    @classmethod
+    def get_instance(cls) -> ArxivWebhookHandler:
+        """Get singleton instance of webhook handler."""
+        if cls._instance is None:
+            cls._instance = ArxivWebhookHandler()
+        return cls._instance
 
 def get_handler() -> ArxivWebhookHandler:
-    global handler
-    if handler is None:
-        handler = ArxivWebhookHandler()
-    return handler
+    """Get webhook handler instance."""
+    return HandlerSingleton.get_instance()
 
 
 @app.post("/interactions")
@@ -274,14 +282,16 @@ async def scheduler_endpoint() -> dict[str, str]:
         from scheduler import ArxivScheduler
         scheduler = ArxivScheduler()
         await scheduler.run_scheduler()
-        return {"status": "completed"}
     except Exception as e:
         logger.exception("Error in scheduler endpoint")
         raise HTTPException(status_code=500, detail=str(e)) from e
+    else:
+        return {"status": "completed"}
 
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8000"))
     logger.info("Starting server on port %d", port)
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Bind to all interfaces for Docker/Railway deployment
+    uvicorn.run(app, host="0.0.0.0", port=port)  # noqa: S104

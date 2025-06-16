@@ -37,8 +37,8 @@ class QueryValidator:
                     category not in CATEGORY_CORRECTIONS and
                     not self._is_valid_category_pattern(category)):
                     return ValidationResult(
-                        is_valid=False, 
-                        error=f"Category not found: #{token.value}"
+                        is_valid=False,
+                        error=f"Category not found: #{token.value}",
                     )
 
         # Check for balanced parentheses
