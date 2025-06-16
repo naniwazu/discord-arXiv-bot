@@ -1,8 +1,17 @@
 from __future__ import annotations
 
 import datetime
+import logging
 
 import arxiv
+
+# Try to use new parser, fall back to legacy implementation
+try:
+    from query_parser import QueryParser
+    USE_NEW_PARSER = True
+except ImportError:
+    USE_NEW_PARSER = False
+    logging.warning("New query parser not available, using legacy implementation")
 
 DEFAULT_RESULT_COUNT: int = 10
 RESULT_COUNT_LIMIT: int = 1000
@@ -47,6 +56,28 @@ DEFAULT_UNTIL: datetime.datetime = datetime.datetime(
 
 
 def parse(search_query: str) -> arxiv.Search | None:
+    """Parse a search query string into an arxiv.Search object.
+    
+    This function maintains backward compatibility while optionally using
+    the new query parser when available.
+    """
+    # Use new parser if available
+    if USE_NEW_PARSER:
+        parser = QueryParser()
+        result = parser.parse(search_query)
+        if result.success:
+            return result.search
+        else:
+            # Fall back to legacy parser on error
+            logging.info(f"New parser failed: {result.error}, falling back to legacy parser")
+            return _parse_legacy(search_query)
+    
+    # Use legacy parser
+    return _parse_legacy(search_query)
+
+
+def _parse_legacy(search_query: str) -> arxiv.Search | None:
+    """Legacy parse implementation for backward compatibility."""
     queries: list[str] = []
     max_results: int = DEFAULT_RESULT_COUNT
     since: datetime.datetime = DEFAULT_SINCE

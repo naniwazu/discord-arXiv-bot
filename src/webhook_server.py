@@ -15,6 +15,13 @@ from nacl.signing import VerifyKey
 
 from tools import parse
 
+# Try to import new parser for enhanced functionality
+try:
+    from query_parser import QueryParser
+    USE_NEW_PARSER = True
+except ImportError:
+    USE_NEW_PARSER = False
+
 if TYPE_CHECKING:
     from collections.abc import Generator
 
@@ -94,6 +101,15 @@ class ArxivWebhookHandler:
 
             # Parse query
             search_query = parse(query_text)
+            query_info = ""
+            
+            # Add query transformation info if new parser is available
+            if USE_NEW_PARSER and search_query is not None:
+                parser = QueryParser()
+                result = parser.parse(query_text)
+                if result.success and result.search:
+                    query_info = f"→ Query: `{result.search.query}` ({result.search.max_results} results, {result.search.sort_by.name} {result.search.sort_order.name})\n"
+            
             if search_query is None:
                 await self._send_followup_message(
                     interaction_data["token"],
@@ -109,16 +125,18 @@ class ArxivWebhookHandler:
             if not message_list or not any(msg.strip() for msg in message_list):
                 await self._send_followup_message(
                     interaction_data["token"],
-                    "No results found",
+                    query_info + "No results found",
                 )
                 return
 
             # Send all messages as followups
             for i, message in enumerate(message_list):
                 if message.strip():
+                    # Include query info in the first message
+                    content = query_info + message.strip() if i == 0 else message.strip()
                     await self._send_followup_message(
                         interaction_data["token"],
-                        message.strip(),
+                        content,
                     )
                     # Small delay between messages to avoid rate limiting
                     if i < len(message_list) - 1:
