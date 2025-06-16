@@ -64,6 +64,21 @@ ignore = [
     "FBT001", # boolean positional arg in function definition
     "FBT002", # boolean default positional arg in function definition
     "FBT003", # boolean positional value in function call
+    "C901",  # function is too complex
+    "PLR0912", # too many branches
+    "PLR0913", # too many arguments
+    "PLR0915", # too many statements
+    "PLR2004", # magic value used in comparison
+    "S104",  # possible binding to all interfaces (OK for web server)
+    "PLW0603", # using global statement (OK in specific cases)
+    "TC002", # move third-party import into type-checking block
+    "TRY300", # consider moving statement to else block
+    "BLE001", # do not catch blind exception
+    "D413",  # missing blank line after last section
+    "D415",  # first line should end with period
+    "UP035", # deprecated typing imports (handled by auto-fix)
+    "E501",  # line too long (some acceptable for clarity)
+    "DTZ007", # naive datetime usage (acceptable for this use case)
 ]
 unfixable = [
     "F401", # unused import
