@@ -18,4 +18,4 @@ COPY src/ ./src/
 EXPOSE 8000
 
 # Command to run the webhook server
-CMD ["python", "src/webhook_server.py"]
+CMD ["python", "-m", "src.webhook_server"]

@@ -13,15 +13,7 @@ from fastapi.responses import JSONResponse
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
-try:
-    from .query_interface import parse
-except ImportError:
-    # Handle case when running directly as script
-    import sys
-    import os
-
-    sys.path.insert(0, os.path.dirname(__file__))
-    from query_interface import parse
+from query_interface import parse
 
 if TYPE_CHECKING:
     from collections.abc import Generator
