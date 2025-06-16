@@ -14,7 +14,13 @@ from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
 from query_interface import parse
-from query_parser import QueryParser
+
+# Try to import new parser for enhanced functionality
+try:
+    from query_parser import QueryParser
+    USE_NEW_PARSER = True
+except ImportError:
+    USE_NEW_PARSER = False
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -31,7 +37,6 @@ app = FastAPI()
 
 class ArxivWebhookHandler:
     MESSAGE_THRESHOLD = 2000
-    DEBUG_LOG_PAPER_COUNT = 5  # Number of papers to log for debugging
 
     def __init__(self) -> None:
         # Check for Discord credentials
@@ -107,8 +112,8 @@ class ArxivWebhookHandler:
             search_query = parse(query_text)
             query_info = ""
 
-            # Add query transformation info
-            if search_query is not None:
+            # Add query transformation info if new parser is available
+            if USE_NEW_PARSER and search_query is not None:
                 parser = QueryParser()
                 result = parser.parse(query_text)
                 if result.success and result.search:
@@ -137,7 +142,7 @@ class ArxivWebhookHandler:
                 )
                 return
 
-            # Send all messages
+            # Send all messages as followups
             for i, message in enumerate(message_list):
                 if message.strip():
                     # Include query info in the first message
@@ -181,11 +186,13 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
-        # Messages should already be properly sized by _process_results
+        # Truncate content if it exceeds Discord's limit
         if len(content) > self.MESSAGE_THRESHOLD:
+            original_length = len(content)
+            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
             logger.warning(
-                "Deferred response content exceeds Discord limit: %d chars. "
-                "This should not happen.",
+                "Deferred response truncated from %d to %d chars for Discord limit",
+                original_length,
                 len(content),
             )
 
@@ -213,10 +220,13 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
-        # Messages should already be properly sized by _process_results
+        # Truncate content if it exceeds Discord's limit
         if len(content) > self.MESSAGE_THRESHOLD:
+            original_length = len(content)
+            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
             logger.warning(
-                "Followup message content exceeds Discord limit: %d chars. This should not happen.",
+                "Followup content truncated from %d to %d chars for Discord limit",
+                original_length,
                 len(content),
             )
 
@@ -239,11 +249,9 @@ class ArxivWebhookHandler:
                 )
 
     def _process_results(
-        self,
-        results: Generator[arxiv.Result],
-        query_info_length: int = 0,
+        self, results: Generator[arxiv.Result], query_info_length: int = 0,
     ) -> list[str]:
-        """Process arXiv results into Discord messages with carry-over logic.
+        """Process arXiv results into Discord messages.
 
         Args:
             results: Generator of arXiv results
@@ -253,70 +261,38 @@ class ArxivWebhookHandler:
         message_list = [""]
         count = 0
 
-        # Calculate threshold for first message accounting for query info
+        # Adjust threshold for first message to account for query info
         first_message_threshold = self.MESSAGE_THRESHOLD - query_info_length
 
         for result in results:
             count += 1
-            paper_content = f"**[{count}] {result.title}**\n<{result}>\n"
+            content = f"**[{count}] {result.title}**\n<{result}>\n"
 
-            # Use different threshold for first message vs subsequent messages
+            # Use different threshold for first message
             is_first_message = len(message_list) == 1 and not message_list[0]
             current_threshold = (
                 first_message_threshold if is_first_message else self.MESSAGE_THRESHOLD
             )
 
-            # Try to add paper to current message
-            current_message = message_list[-1]
-
-            # Check if adding this paper would exceed the threshold
-            would_exceed = len(current_message) + len(paper_content) > current_threshold
-
-            if would_exceed:
-                # If current message is empty, we must add this paper (single paper too long case)
-                if not current_message.strip():
-                    message_list[-1] += paper_content
-                    if count <= self.DEBUG_LOG_PAPER_COUNT:
-                        logger.info(
-                            "Paper %d: Added to message %d (empty message case)",
-                            count,
-                            len(message_list),
-                        )
+            # Check if adding this content would exceed the threshold
+            if len(message_list[-1]) + len(content) > current_threshold:
+                # If the current message is not empty, start a new message
+                if message_list[-1].strip():
+                    message_list.append(content)
                 else:
-                    # Current message has content and adding this paper would exceed limit
-                    # Carry over this complete paper to the next message
-                    message_list.append(paper_content)
-                    if count <= self.DEBUG_LOG_PAPER_COUNT:
-                        logger.info(
-                            "Paper %d: Carried over to message %d", count, len(message_list),
-                        )
+                    # If current message is empty but content is too long, add it anyway
+                    message_list[-1] += content
             else:
-                # Paper fits completely in current message
-                message_list[-1] += paper_content
-                if count <= self.DEBUG_LOG_PAPER_COUNT:
-                    logger.info("Paper %d: Added to message %d", count, len(message_list))
+                message_list[-1] += content
 
         # Add summary at the end
         if message_list and count > 0:
             summary = f"\n*Found {count} results*"
-
-            # Try to add summary to last message, carry over if needed
+            # If adding summary would exceed threshold, put it in a new message
             if len(message_list[-1]) + len(summary) > self.MESSAGE_THRESHOLD:
-                # Summary doesn't fit, create new message for it
                 message_list.append(summary)
             else:
-                # Summary fits in last message
                 message_list[-1] += summary
-
-        # Debug: Log message list structure
-        logger.info("Generated %d messages:", len(message_list))
-        for i, msg in enumerate(message_list):
-            logger.info(
-                "Message %d: %d chars, starts with: %s",
-                i + 1,
-                len(msg),
-                msg[:50].replace("\n", " ") if msg else "[EMPTY]",
-            )
 
         return message_list
 
@@ -333,7 +309,6 @@ class HandlerSingleton:
             cls._instance = ArxivWebhookHandler()
         return cls._instance
 
-
 def get_handler() -> ArxivWebhookHandler:
     """Get webhook handler instance."""
     return HandlerSingleton.get_instance()
@@ -341,8 +316,7 @@ def get_handler() -> ArxivWebhookHandler:
 
 @app.post("/interactions")
 async def interactions_endpoint(
-    request: Request,
-    background_tasks: BackgroundTasks,
+    request: Request, background_tasks: BackgroundTasks,
 ) -> JSONResponse:
     """Discord interactions endpoint."""
     handler = get_handler()
@@ -398,7 +372,6 @@ async def scheduler_endpoint() -> dict[str, str]:
     """Scheduler endpoint for auto channel processing."""
     try:
         from scheduler import ArxivScheduler
-
         scheduler = ArxivScheduler()
         await scheduler.run_scheduler()
     except Exception as e:
@@ -410,7 +383,6 @@ async def scheduler_endpoint() -> dict[str, str]:
 
 if __name__ == "__main__":
     import uvicorn
-
     port = int(os.getenv("PORT", "8000"))
     logger.info("Starting server on port %d", port)
     # Bind to all interfaces for Docker/Railway deployment
