@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime
+
 import arxiv
 
 from .constants import (
@@ -20,6 +22,7 @@ class QueryTransformer:
 
     def __init__(self, timezone_offset: int = DEFAULT_TIMEZONE_OFFSET) -> None:
         self.timezone_offset = timezone_offset
+        self.timezone = datetime.timezone(datetime.timedelta(hours=timezone_offset))
 
     def transform(self, tokens: list[Token]) -> arxiv.Search:
         """Transform tokens into an arXiv Search object."""
@@ -39,6 +42,8 @@ class QueryTransformer:
         query_parts = []
         max_results = DEFAULT_RESULT_COUNT
         sort_criterion, sort_order = DEFAULT_SORT
+        since_date = None
+        until_date = None
 
         # Group tokens by type
         for token in tokens:
@@ -46,11 +51,24 @@ class QueryTransformer:
                 max_results = int(token.value)
             elif token.type == TokenType.SORT:
                 sort_criterion, sort_order = SORT_MAPPINGS[token.value]
+            elif token.type == TokenType.DATE_GT:
+                since_date = self._parse_date(token.value)
+            elif token.type == TokenType.DATE_LT:
+                until_date = self._parse_date(token.value)
+                # For until dates, add one day if only date is specified (YYYYMMDD)
+                if until_date and len(token.value) == 8:
+                    until_date += datetime.timedelta(days=1)
             else:
                 # Convert token to query part
                 query_part = self._token_to_query_part(token)
                 if query_part:
                     query_parts.append(query_part)
+
+        # Add date range if specified
+        if since_date or until_date:
+            date_query = self._build_date_query(since_date, until_date)
+            if date_query:
+                query_parts.append(date_query)
 
         # Join query parts with AND
         query = " AND ".join(query_parts) if query_parts else ""
@@ -117,6 +135,8 @@ class QueryTransformer:
         query_tokens = []
         max_results = DEFAULT_RESULT_COUNT
         sort_criterion, sort_order = DEFAULT_SORT
+        since_date = None
+        until_date = None
 
         # Separate query tokens from control tokens
         for token in tokens:
@@ -124,11 +144,27 @@ class QueryTransformer:
                 max_results = int(token.value)
             elif token.type == TokenType.SORT:
                 sort_criterion, sort_order = SORT_MAPPINGS[token.value]
+            elif token.type == TokenType.DATE_GT:
+                since_date = self._parse_date(token.value)
+            elif token.type == TokenType.DATE_LT:
+                until_date = self._parse_date(token.value)
+                # For until dates, add one day if only date is specified (YYYYMMDD)
+                if until_date and len(token.value) == 8:
+                    until_date += datetime.timedelta(days=1)
             else:
                 query_tokens.append(token)
 
         # Parse query with operators
         query = self._parse_query_expression(query_tokens)
+
+        # Add date range if specified
+        if since_date or until_date:
+            date_query = self._build_date_query(since_date, until_date)
+            if date_query:
+                if query:
+                    query = f"({query}) AND {date_query}"
+                else:
+                    query = date_query
 
         return arxiv.Search(
             query=query,
@@ -347,3 +383,32 @@ class QueryTransformer:
             return " OR ".join(group_queries) if group_queries else ""
         # No OR operators, process as AND expression
         return self._parse_and_expression(tokens)
+
+    def _parse_date(self, date_str: str) -> datetime.datetime | None:
+        """Parse date string in various formats."""
+        try:
+            if len(date_str) == 8:  # YYYYMMDD
+                return datetime.datetime.strptime(date_str, "%Y%m%d").replace(tzinfo=self.timezone)
+            elif len(date_str) == 12:  # YYYYMMDDHHMM
+                return datetime.datetime.strptime(date_str, "%Y%m%d%H%M").replace(tzinfo=self.timezone)
+            elif len(date_str) == 14:  # YYYYMMDDHHMMSS
+                return datetime.datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(tzinfo=self.timezone)
+        except ValueError:
+            pass
+        return None
+
+    def _build_date_query(self, since_date: datetime.datetime | None, until_date: datetime.datetime | None) -> str | None:
+        """Build arXiv date range query."""
+        if not since_date and not until_date:
+            return None
+
+        # Default bounds if not specified
+        if not since_date:
+            since_date = datetime.datetime(1900, 1, 1, 0, 0, 0, tzinfo=self.timezone)
+        if not until_date:
+            until_date = datetime.datetime(2100, 1, 1, 0, 0, 0, tzinfo=self.timezone)
+
+        since_str = since_date.strftime("%Y%m%d%H%M%S")
+        until_str = until_date.strftime("%Y%m%d%H%M%S")
+
+        return f"submittedDate:[{since_str} TO {until_str}]"

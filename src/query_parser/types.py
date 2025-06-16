@@ -26,6 +26,8 @@ class TokenType(Enum):
     RPAREN = auto()
     PHRASE = auto()
     ARXIV_FIELD = auto()
+    DATE_GT = auto()
+    DATE_LT = auto()
     UNKNOWN = auto()
 
 

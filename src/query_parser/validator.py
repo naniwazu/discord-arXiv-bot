@@ -27,9 +27,20 @@ class QueryValidator:
                         )
                 except ValueError:
                     return ValidationResult(is_valid=False, error=f"Invalid number: {token.value}")
-
-        # Note: We don't strictly validate categories anymore for legacy compatibility
-        # Invalid categories will be passed through to arXiv API which will handle them
+            elif token.type in (TokenType.DATE_GT, TokenType.DATE_LT):
+                # Validate date format
+                if not self._is_valid_date_format(token.value):
+                    return ValidationResult(
+                        is_valid=False,
+                        error=f"Invalid date format: {token.value}. Use YYYYMMDD, YYYYMMDDHHMM, or YYYYMMDDHHMMSS",
+                    )
+            elif token.type == TokenType.CATEGORY:
+                # Validate category format
+                if not self._is_valid_category_pattern(token.value):
+                    return ValidationResult(
+                        is_valid=False,
+                        error=f"Invalid category format: {token.value}. Use format like 'cs.AI' or 'physics'",
+                    )
 
         # Check for balanced parentheses and empty parentheses
         paren_count = 0
@@ -92,3 +103,28 @@ class QueryValidator:
         import re
         pattern = r"^[a-z]+[-.]?[a-z]*$"
         return bool(re.match(pattern, category))
+
+    def _is_valid_date_format(self, date_str: str) -> bool:
+        """Check if date string is in valid format."""
+        import datetime
+        
+        if len(date_str) == 8:  # YYYYMMDD
+            try:
+                datetime.datetime.strptime(date_str, "%Y%m%d")
+                return True
+            except ValueError:
+                return False
+        elif len(date_str) == 12:  # YYYYMMDDHHMM
+            try:
+                datetime.datetime.strptime(date_str, "%Y%m%d%H%M")
+                return True
+            except ValueError:
+                return False
+        elif len(date_str) == 14:  # YYYYMMDDHHMMSS
+            try:
+                datetime.datetime.strptime(date_str, "%Y%m%d%H%M%S")
+                return True
+            except ValueError:
+                return False
+        
+        return False

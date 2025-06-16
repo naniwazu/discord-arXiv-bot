@@ -21,6 +21,10 @@ class Tokenizer:
             # Phrases (highest priority)
             (r'"([^"]+)"', TokenType.PHRASE, 1, True),  # capture group 1, include quotes
 
+            # Date patterns (high priority, before other < > patterns)
+            (r">(\d{8,14})", TokenType.DATE_GT, 1, False),
+            (r"<(\d{8,14})(?!\S)", TokenType.DATE_LT, 1, False),  # Don't match <@mentions
+
             # arXiv-style field specifications (ti:, au:, etc.) without parentheses
             (r"(ti|au|abs|cat|all|co|jr|rn|id):(?!\()", TokenType.ARXIV_FIELD, 1, False),
 
@@ -99,8 +103,8 @@ class Tokenizer:
         if word.isdigit():
             tokens.append(Token(TokenType.NUMBER, word, position))
         # Check if it's a sort specifier
-        elif word.lower() in SORT_MAPPINGS:
-            tokens.append(Token(TokenType.SORT, word.lower(), position))
+        elif word in SORT_MAPPINGS:
+            tokens.append(Token(TokenType.SORT, word, position))
         # Otherwise it's a keyword
         else:
             tokens.append(Token(TokenType.KEYWORD, word, position))
