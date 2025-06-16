@@ -140,6 +140,22 @@ class TestIntegration:
             assert result.success
             assert expected_part in result.query_string
 
+    def test_category_case_variations(self):
+        """Test that categories work with different case variations."""
+        test_cases = [
+            ("#cs.AI", "cat:cs.AI"),          # Mixed case (standard)
+            ("#cs.ai", "cat:cs.ai"),          # All lowercase
+            ("#CS.AI", "cat:CS.AI"),          # All uppercase
+            ("#cs.CR", "cat:cs.CR"),          # Cryptography & Security
+            ("#quant-ph", "cat:quant-ph"),    # With dash
+            ("#math.GM", "cat:math.GM"),      # Mathematics
+        ]
+
+        for input_query, expected_part in test_cases:
+            result = self.parser.parse(input_query)
+            assert result.success, f"Failed to parse: {input_query}"
+            assert expected_part in result.query_string, f"Expected {expected_part} in {result.query_string}"
+
     def test_combined_features(self):
         """Test combining multiple features."""
         result = self.parser.parse('@hinton "deep learning" #cs.LG 100 rd')

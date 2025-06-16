@@ -74,6 +74,26 @@ class TestQueryValidator:
         result = self.validator.validate(tokens)
         assert result.is_valid
 
+    def test_valid_category_mixedcase(self):
+        """Test valid category with mixed case (standard arXiv format)."""
+        test_cases = [
+            "cs.CR",  # Cryptography and Security
+            "cs.AI",  # Artificial Intelligence
+            "math.GM",  # General Mathematics
+            "physics.GR",  # General Relativity
+            "quant-ph",  # Quantum Physics (lowercase with dash)
+        ]
+        for category in test_cases:
+            tokens = [Token(TokenType.CATEGORY, category, 0)]
+            result = self.validator.validate(tokens)
+            assert result.is_valid, f"Category {category} should be valid"
+
+    def test_valid_category_uppercase(self):
+        """Test valid category with all uppercase."""
+        tokens = [Token(TokenType.CATEGORY, "CS.AI", 0)]
+        result = self.validator.validate(tokens)
+        assert result.is_valid
+
     def test_invalid_category(self):
         """Test invalid category (now passes through to arXiv API)."""
         tokens = [Token(TokenType.CATEGORY, "invalid.xyz", 0)]
