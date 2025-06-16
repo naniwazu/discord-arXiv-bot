@@ -13,11 +13,11 @@ from fastapi.responses import JSONResponse
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
-from query_interface import parse
+from .query_interface import parse
 
 # Try to import new parser for enhanced functionality
 try:
-    from query_parser import QueryParser
+    from .query_parser import QueryParser
     USE_NEW_PARSER = True
 except ImportError:
     USE_NEW_PARSER = False
@@ -282,7 +282,7 @@ class ArxivWebhookHandler:
             content = f"**[{count}] {result.title}**\n<{result}>\n"
 
             # Use different threshold for first message
-            is_first_message = len(message_list) == 1 and not message_list[0]
+            is_first_message = len(message_list) == 1
             current_threshold = (
                 first_message_threshold if is_first_message else self.MESSAGE_THRESHOLD
             )

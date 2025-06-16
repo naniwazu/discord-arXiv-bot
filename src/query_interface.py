@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from query_parser import QueryParser
+from .query_parser import QueryParser
 
 if TYPE_CHECKING:
     import arxiv
