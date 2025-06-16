@@ -5,11 +5,11 @@ WORKDIR /app
 # Install UV
 RUN pip install uv
 
-# Copy project files
-COPY pyproject.toml uv.lock README.md ./
+# Copy project configuration
+COPY pyproject.toml ./
 
-# Install dependencies with UV
-RUN uv pip install --system -r uv.lock
+# Install dependencies with UV (resolves from pyproject.toml)
+RUN uv pip install --system .
 
 # Copy source code
 COPY src/ ./src/
