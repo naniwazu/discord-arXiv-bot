@@ -121,34 +121,34 @@ def _parse_legacy(search_query: str) -> arxiv.Search | None:
         elif chunk.count(":") == 1:
             prefix, body = chunk.split(":")
             if prefix == "since":
-                if len(body) == 8:
-                    since = datetime.datetime.strptime(body, "%Y%m%d") + datetime.timedelta(
-                        hours=-9,
+                if len(body) == YYYYMMDD_LENGTH:
+                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDD) + datetime.timedelta(
+                        hours=JST_OFFSET_HOURS,
                     )
-                elif len(body) == 12:
-                    since = datetime.datetime.strptime(body, "%Y%m%d%H%M") + datetime.timedelta(
-                        hours=-9,
+                elif len(body) == YYYYMMDDHHMM_LENGTH:
+                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMM) + datetime.timedelta(
+                        hours=JST_OFFSET_HOURS,
                     )
-                elif len(body) == 14:
-                    since = datetime.datetime.strptime(body, "%Y%m%d%H%M%S") + datetime.timedelta(
-                        hours=-9,
+                elif len(body) == YYYYMMDDHHMMSS_LENGTH:
+                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMMSS) + datetime.timedelta(
+                        hours=JST_OFFSET_HOURS,
                     )
                 else:
                     return None
                 continue
             if prefix == "until":
-                if len(body) == 8:
-                    until = datetime.datetime.strptime(body, "%Y%m%d") + datetime.timedelta(
+                if len(body) == YYYYMMDD_LENGTH:
+                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDD) + datetime.timedelta(
                         days=1,
-                        hours=-9,
+                        hours=JST_OFFSET_HOURS,
                     )  # end of the day
-                elif len(body) == 12:
-                    until = datetime.datetime.strptime(body, "%Y%m%d%H%M") + datetime.timedelta(
-                        hours=-9,
+                elif len(body) == YYYYMMDDHHMM_LENGTH:
+                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMM) + datetime.timedelta(
+                        hours=JST_OFFSET_HOURS,
                     )
-                elif len(body) == 14:
-                    until = datetime.datetime.strptime(body, "%Y%m%d%H%M%S") + datetime.timedelta(
-                        hours=-9,
+                elif len(body) == YYYYMMDDHHMMSS_LENGTH:
+                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMMSS) + datetime.timedelta(
+                        hours=JST_OFFSET_HOURS,
                     )
                 else:
                     return None
@@ -163,8 +163,8 @@ def _parse_legacy(search_query: str) -> arxiv.Search | None:
     if since != DEFAULT_SINCE or until != DEFAULT_UNTIL:
         queries.append(
             "submittedDate:[{} TO {}]".format(
-                datetime.datetime.strftime(since, "%Y%m%d%H%M%S"),
-                datetime.datetime.strftime(until, "%Y%m%d%H%M%S"),
+                datetime.datetime.strftime(since, DATE_FORMAT_YYYYMMDDHHMMSS),
+                datetime.datetime.strftime(until, DATE_FORMAT_YYYYMMDDHHMMSS),
             ),
         )
 
