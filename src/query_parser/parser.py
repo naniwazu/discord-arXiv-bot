@@ -21,6 +21,7 @@ class QueryParser:
         Args:
             timezone_offset: Timezone offset in hours (default: -9 for JST)
             debug: Whether to include debug information in results
+
         """
         self.tokenizer = Tokenizer()
         self.transformer = QueryTransformer(timezone_offset)
@@ -35,6 +36,7 @@ class QueryParser:
 
         Returns:
             ParseResult containing the search object or error information
+
         """
         try:
             # Tokenize

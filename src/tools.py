@@ -11,7 +11,9 @@ try:
     USE_NEW_PARSER = True
 except ImportError:
     USE_NEW_PARSER = False
-    logging.warning("New query parser not available, using legacy implementation")
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning("New query parser not available, using legacy implementation")
 
 DEFAULT_RESULT_COUNT: int = 10
 RESULT_COUNT_LIMIT: int = 1000
@@ -57,7 +59,7 @@ DEFAULT_UNTIL: datetime.datetime = datetime.datetime(
 
 def parse(search_query: str) -> arxiv.Search | None:
     """Parse a search query string into an arxiv.Search object.
-    
+
     This function maintains backward compatibility while optionally using
     the new query parser when available.
     """

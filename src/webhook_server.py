@@ -25,6 +25,10 @@ except ImportError:
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+# Discord constants
+DISCORD_INTERACTION_TYPE_APPLICATION_COMMAND = 2
+HTTP_STATUS_OK = 200
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -57,7 +61,11 @@ class ArxivWebhookHandler:
         except BadSignatureError:
             return False
 
-    async def handle_interaction(self, interaction_data: dict[str, Any], background_tasks: BackgroundTasks) -> dict[str, Any]:
+    async def handle_interaction(
+        self,
+        interaction_data: dict[str, Any],
+        background_tasks: BackgroundTasks,
+    ) -> dict[str, Any]:
         """Handle Discord interaction."""
         interaction_type = interaction_data.get("type")
 
@@ -66,7 +74,7 @@ class ArxivWebhookHandler:
             return {"type": 1}
 
         # Handle application command
-        if interaction_type == 2:
+        if interaction_type == DISCORD_INTERACTION_TYPE_APPLICATION_COMMAND:
             command_name = interaction_data.get("data", {}).get("name")
 
             if command_name == "arxiv":
@@ -108,7 +116,11 @@ class ArxivWebhookHandler:
                 parser = QueryParser()
                 result = parser.parse(query_text)
                 if result.success and result.search:
-                    query_info = f"→ Query: `{result.search.query}` ({result.search.max_results} results, {result.search.sort_by.name} {result.search.sort_order.name})\n"
+                    query_info = (
+                        f"→ Query: `{result.search.query}` "
+                        f"({result.search.max_results} results, "
+                        f"{result.search.sort_by.name} {result.search.sort_order.name})\n"
+                    )
 
             if search_query is None:
                 await self._send_followup_message(
@@ -166,7 +178,7 @@ class ArxivWebhookHandler:
 
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=headers, json=data)
-            if response.status_code != 200:
+            if response.status_code != HTTP_STATUS_OK:
                 logger.error(
                     "Failed to send followup: %s - %s", response.status_code, response.text,
                 )

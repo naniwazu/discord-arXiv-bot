@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List
 
 from .constants import CATEGORY_CORRECTIONS, CATEGORY_SHORTCUTS, RESULT_COUNT_LIMIT
 from .types import Token, TokenType, ValidationResult
@@ -67,15 +66,14 @@ class QueryValidator:
                     TokenType.RPAREN,
                 }
                 if (prev_token.type not in valid_operand_types or
-                    (next_token.type not in valid_operand_types and next_token.type != TokenType.LPAREN)):
+                    (next_token.type not in valid_operand_types and 
+                     next_token.type != TokenType.LPAREN)):
                     return ValidationResult(False, "Invalid OR operator usage")
 
         return ValidationResult(True)
 
     def _is_valid_category_pattern(self, category: str) -> bool:
         """Check if a category follows valid arXiv category pattern."""
-        # Basic pattern check for arXiv categories
-        # Format: archive.subject or archive-subject
         import re
         pattern = r"^[a-z]+[-.]?[a-z]*$"
         return bool(re.match(pattern, category))
