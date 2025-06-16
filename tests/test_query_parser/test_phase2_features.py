@@ -1,6 +1,5 @@
 """Tests for Phase 2 features (operators)."""
 
-import pytest
 
 from src.query_parser import QueryParser
 

@@ -1,6 +1,5 @@
 """Tests for Phase 3 features (parentheses and complex queries)."""
 
-import pytest
 
 from src.query_parser import QueryParser
 

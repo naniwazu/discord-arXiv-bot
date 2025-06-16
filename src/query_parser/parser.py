@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import arxiv
+if TYPE_CHECKING:
+    import arxiv
 
 from .tokenizer import Tokenizer
 from .transformer import QueryTransformer

@@ -132,7 +132,7 @@ class TestEdgeCases:
         result = self.parser.parse("2023 conference")
         assert not result.success
         assert "1-1000" in result.error
-        
+
         # Test with valid number
         result2 = self.parser.parse("50 conference")
         assert result2.success
