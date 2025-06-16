@@ -44,8 +44,36 @@ class QueryValidator:
         if paren_count != 0:
             return ValidationResult(is_valid=False, error="Unbalanced parentheses")
 
-        # Note: OR/NOT operators are not implemented in Phase 1
-        # They will be ignored in the transformer for now
+        # Validate OR/NOT operators (Phase 2)
+        for i, token in enumerate(tokens):
+            if token.type == TokenType.OR:
+                if i == 0 or i == len(tokens) - 1:
+                    return ValidationResult(is_valid=False, error="Invalid OR operator placement")
+                # Check that OR is between valid operands
+                prev_token = tokens[i - 1]
+                next_token = tokens[i + 1]
+                valid_operand_types = {
+                    TokenType.KEYWORD, TokenType.AUTHOR, TokenType.CATEGORY,
+                    TokenType.ALL_FIELDS, TokenType.ABSTRACT, TokenType.PHRASE,
+                    TokenType.RPAREN,
+                }
+                if (prev_token.type not in valid_operand_types or
+                    (next_token.type not in valid_operand_types and
+                     next_token.type != TokenType.LPAREN)):
+                    return ValidationResult(is_valid=False, error="Invalid OR operator usage")
+            
+            elif token.type == TokenType.NOT:
+                # NOT must be followed by a valid operand
+                if i == len(tokens) - 1:
+                    return ValidationResult(is_valid=False, error="NOT operator must be followed by a term")
+                next_token = tokens[i + 1]
+                valid_operand_types = {
+                    TokenType.KEYWORD, TokenType.AUTHOR, TokenType.CATEGORY,
+                    TokenType.ALL_FIELDS, TokenType.ABSTRACT, TokenType.PHRASE,
+                    TokenType.LPAREN,
+                }
+                if next_token.type not in valid_operand_types:
+                    return ValidationResult(is_valid=False, error="NOT operator must be followed by a valid term")
 
         return ValidationResult(is_valid=True)
 

@@ -121,22 +121,24 @@ class TestQueryValidator:
         assert result.is_valid
 
     def test_or_operator_at_start(self):
-        """Test OR operator at start (Phase 1: not validated)."""
+        """Test OR operator at start (Phase 2: should be invalid)."""
         tokens = [
             Token(TokenType.OR, "|", 0),
             Token(TokenType.KEYWORD, "quantum", 2),
         ]
         result = self.validator.validate(tokens)
-        assert result.is_valid  # OR validation removed in Phase 1
+        assert not result.is_valid  # OR validation restored in Phase 2
+        assert "Invalid OR operator placement" in result.error
 
     def test_or_operator_at_end(self):
-        """Test OR operator at end (Phase 1: not validated)."""
+        """Test OR operator at end (Phase 2: should be invalid)."""
         tokens = [
             Token(TokenType.KEYWORD, "quantum", 0),
             Token(TokenType.OR, "|", 8),
         ]
         result = self.validator.validate(tokens)
-        assert result.is_valid  # OR validation removed in Phase 1
+        assert not result.is_valid  # OR validation restored in Phase 2
+        assert "Invalid OR operator placement" in result.error
 
     def test_or_between_valid_operands(self):
         """Test OR between various valid operands."""
