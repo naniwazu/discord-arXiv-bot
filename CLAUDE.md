@@ -5,11 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
-- `poetry install` - Install dependencies
-- `poetry run python src/webhook_server.py` - Run the webhook server
-- `poetry run python src/scheduler.py` - Run scheduler manually
-- `poetry run ruff check` - Run linting
-- `poetry run ruff format` - Format code
+- `uv sync` - Install dependencies (preferred)
+- `uv run python src/webhook_server.py` - Run the webhook server
+- `uv run python src/scheduler.py` - Run scheduler manually
+- `uv run ruff check` - Run linting
+- `uv run ruff format` - Format code
+
+#### Legacy (Poetry)
+- `poetry install` - Install dependencies (legacy)
+- `poetry run python src/webhook_server.py` - Run the webhook server (legacy)
 
 ### Environment Variables
 - `DISCORD_BOT_TOKEN` - Discord bot token
@@ -127,3 +131,25 @@ All date inputs are treated as JST (UTC-9). Auto-processing searches papers from
    - Service must exit after task completion
 2. **Important**: Cron runs are based on UTC time
 3. **Minimum interval**: 5 minutes between executions
+
+## Migration to UV (2025-01-16)
+
+### Package Management Migration
+- **From**: Poetry → **To**: UV (for faster builds and dependency management)
+- **Configuration**: Standard pyproject.toml format (PEP 621)
+- **Lock file**: uv.lock replaces poetry.lock
+- **Speed improvement**: 10-100x faster dependency resolution and installation
+
+### UV Setup
+```bash
+# Create virtual environment
+uv venv
+
+# Install dependencies
+uv sync
+
+# Run commands
+uv run python src/webhook_server.py
+uv run pytest tests/
+uv run ruff check src/
+```
