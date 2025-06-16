@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
-from tools import parse
+from query_interface import parse
 
 # Try to import new parser for enhanced functionality
 try:
