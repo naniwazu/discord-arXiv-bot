@@ -133,7 +133,7 @@ class ArxivWebhookHandler:
             # Get results based on user query
             logger.info("Fetching results")
             results = self.arxiv_client.results(search_query)
-            message_list = self._process_results(results)
+            message_list = self._process_results(results, len(query_info))
 
             if not message_list or not any(msg.strip() for msg in message_list):
                 await self._edit_deferred_response(
@@ -147,7 +147,6 @@ class ArxivWebhookHandler:
                 if message.strip():
                     # Include query info in the first message
                     content = query_info + message.strip() if i == 0 else message.strip()
-                    
                     try:
                         # For first message, edit the deferred response
                         if i == 0:
@@ -189,8 +188,13 @@ class ArxivWebhookHandler:
 
         # Truncate content if it exceeds Discord's limit
         if len(content) > self.MESSAGE_THRESHOLD:
+            original_length = len(content)
             content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
-            logger.warning("Deferred response content truncated to fit Discord's character limit")
+            logger.warning(
+                "Deferred response truncated from %d to %d chars for Discord limit",
+                original_length,
+                len(content),
+            )
 
         url = f"https://discord.com/api/v10/webhooks/{self.application_id}/{interaction_token}/messages/@original"
 
@@ -218,8 +222,13 @@ class ArxivWebhookHandler:
 
         # Truncate content if it exceeds Discord's limit
         if len(content) > self.MESSAGE_THRESHOLD:
+            original_length = len(content)
             content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
-            logger.warning("Followup content truncated to fit Discord's character limit")
+            logger.warning(
+                "Followup content truncated from %d to %d chars for Discord limit",
+                original_length,
+                len(content),
+            )
 
         url = f"https://discord.com/api/v10/webhooks/{self.application_id}/{interaction_token}"
 
@@ -239,23 +248,51 @@ class ArxivWebhookHandler:
                     response.text,
                 )
 
-    def _process_results(self, results: Generator[arxiv.Result]) -> list[str]:
-        """Process arXiv results into Discord messages."""
+    def _process_results(
+        self, results: Generator[arxiv.Result], query_info_length: int = 0,
+    ) -> list[str]:
+        """Process arXiv results into Discord messages.
+
+        Args:
+            results: Generator of arXiv results
+            query_info_length: Length of query info that will be prepended to first message
+
+        """
         message_list = [""]
         count = 0
+
+        # Adjust threshold for first message to account for query info
+        first_message_threshold = self.MESSAGE_THRESHOLD - query_info_length
 
         for result in results:
             count += 1
             content = f"**[{count}] {result.title}**\n<{result}>\n"
 
-            if len(message_list[-1]) + len(content) > self.MESSAGE_THRESHOLD:
-                message_list.append(content)
+            # Use different threshold for first message
+            is_first_message = len(message_list) == 1 and not message_list[0]
+            current_threshold = (
+                first_message_threshold if is_first_message else self.MESSAGE_THRESHOLD
+            )
+
+            # Check if adding this content would exceed the threshold
+            if len(message_list[-1]) + len(content) > current_threshold:
+                # If the current message is not empty, start a new message
+                if message_list[-1].strip():
+                    message_list.append(content)
+                else:
+                    # If current message is empty but content is too long, add it anyway
+                    message_list[-1] += content
             else:
                 message_list[-1] += content
 
         # Add summary at the end
         if message_list and count > 0:
-            message_list[-1] += f"\n*Found {count} results*"
+            summary = f"\n*Found {count} results*"
+            # If adding summary would exceed threshold, put it in a new message
+            if len(message_list[-1]) + len(summary) > self.MESSAGE_THRESHOLD:
+                message_list.append(summary)
+            else:
+                message_list[-1] += summary
 
         return message_list
 
