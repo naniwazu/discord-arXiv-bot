@@ -1,6 +1,5 @@
 """Tests for the tokenizer module."""
 
-import pytest
 
 from src.query_parser.tokenizer import Tokenizer
 from src.query_parser.types import TokenType
@@ -88,7 +87,7 @@ class TestTokenizer:
 
     def test_complex_query(self):
         """Test complex query tokenization."""
-        tokens = self.tokenizer.tokenize('quantum @hinton #cs.AI 20 rd')
+        tokens = self.tokenizer.tokenize("quantum @hinton #cs.AI 20 rd")
         assert len(tokens) == 5
         assert tokens[0].type == TokenType.KEYWORD
         assert tokens[0].value == "quantum"
@@ -103,7 +102,7 @@ class TestTokenizer:
 
     def test_mixed_prefixes(self):
         """Test query with mixed prefixes."""
-        tokens = self.tokenizer.tokenize('@lecun *neural #cs.LG')
+        tokens = self.tokenizer.tokenize("@lecun *neural #cs.LG")
         assert len(tokens) == 3
         assert tokens[0].type == TokenType.AUTHOR
         assert tokens[1].type == TokenType.ALL_FIELDS

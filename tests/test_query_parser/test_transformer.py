@@ -1,6 +1,5 @@
 """Tests for the transformer module."""
 
-import pytest
 
 from src.query_parser.transformer import QueryTransformer
 from src.query_parser.types import Token, TokenType

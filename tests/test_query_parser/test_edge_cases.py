@@ -1,6 +1,5 @@
 """Tests for edge cases and error handling."""
 
-import pytest
 
 from src.query_parser import QueryParser
 

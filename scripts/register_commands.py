@@ -18,26 +18,26 @@ async def register_slash_command():
     if not bot_token:
         print("Error: DISCORD_BOT_TOKEN environment variable is required")
         sys.exit(1)
-    
+
     # Get application ID from token
     headers = {"Authorization": f"Bot {bot_token}"}
-    
+
     async with httpx.AsyncClient() as client:
         # Get current application info
         response = await client.get(
             "https://discord.com/api/v10/applications/@me",
-            headers=headers
+            headers=headers,
         )
-        
+
         if response.status_code != 200:
             print(f"Error getting application info: {response.status_code}")
             print(response.text)
             sys.exit(1)
-        
+
         app_data = response.json()
         app_id = app_data["id"]
         print(f"Application ID: {app_id}")
-        
+
         # Register slash command
         command_data = {
             "name": "arxiv",
@@ -47,17 +47,17 @@ async def register_slash_command():
                     "name": "query",
                     "description": "Search query (e.g., 'ti:machine,learning 20 s since:20240101')",
                     "type": 3,  # STRING
-                    "required": True
-                }
-            ]
+                    "required": True,
+                },
+            ],
         }
-        
+
         response = await client.post(
             f"https://discord.com/api/v10/applications/{app_id}/commands",
             headers=headers,
-            json=command_data
+            json=command_data,
         )
-        
+
         if response.status_code in (200, 201):
             print("✅ Successfully registered /arxiv command!")
             print(response.json())

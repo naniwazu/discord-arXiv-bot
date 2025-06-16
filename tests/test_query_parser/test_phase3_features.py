@@ -66,14 +66,14 @@ class TestPhase3Features:
         result = self.parser.parse("(quantum | photon) (computing | calculation)")
         assert result.success
         # Should AND the two groups
-        assert "(ti:quantum OR ti:photon) AND (ti:computing OR ti:calculation)" == result.query_string
+        assert result.query_string == "(ti:quantum OR ti:photon) AND (ti:computing OR ti:calculation)"
 
     @pytest.mark.skip(reason="Phase 3 not implemented yet")
     def test_parentheses_with_prefixes(self):
         """Test parentheses work with all prefix types."""
         result = self.parser.parse("(*quantum | $neural) (@hinton | @lecun)")
         assert result.success
-        assert "(all:quantum OR abs:neural) AND (au:hinton OR au:lecun)" == result.query_string
+        assert result.query_string == "(all:quantum OR abs:neural) AND (au:hinton OR au:lecun)"
 
     @pytest.mark.skip(reason="Phase 3 not implemented yet")
     def test_empty_parentheses(self):

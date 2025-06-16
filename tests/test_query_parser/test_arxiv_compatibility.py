@@ -1,6 +1,5 @@
 """Tests for arXiv API compatibility and detailed query mode."""
 
-import pytest
 
 from src.query_parser import QueryParser
 
@@ -22,7 +21,7 @@ class TestArxivCompatibility:
             "all:neural NOT au:lecun",
             'ti:"machine learning" AND cat:cs.*',
         ]
-        
+
         for query in queries:
             # Current parser may fail on these
             # This is expected - they're for /arxiv-detail mode
@@ -37,7 +36,7 @@ class TestArxivCompatibility:
             "until:20241231",
             "since:20240101 until:20241231",
         ]
-        
+
         for query in queries:
             result = self.parser.parse(query)
             # Currently these won't be recognized
@@ -47,7 +46,7 @@ class TestArxivCompatibility:
         """Test arXiv boolean operators."""
         # arXiv uses AND, OR, NOT (uppercase)
         # Our parser uses |, -, and implicit AND
-        
+
         # This would be for /arxiv-detail
         result = self.parser.parse("quantum AND neural")
         assert result.success
@@ -109,7 +108,7 @@ class TestArxivCompatibility:
         """Test sort order compatibility."""
         # Our parser uses different notation
         # arXiv API expects SortCriterion enum values
-        
+
         # Our format
         result = self.parser.parse("quantum sd")
         assert result.search.sort_by.name == "SubmittedDate"
@@ -132,7 +131,7 @@ class TestArxivCompatibility:
         """Test that categories are normalized to arXiv format."""
         # These should all normalize to cs.AI
         variations = ["cs.ai", "CS.AI", "cs.Ai"]
-        
+
         for var in variations:
             result = self.parser.parse(f"#{var}")
             assert result.success
@@ -142,7 +141,7 @@ class TestArxivCompatibility:
         """Test that generated query strings are valid for arXiv API."""
         result = self.parser.parse("quantum @hinton #cs.AI")
         assert result.success
-        
+
         # Check query string format
         query = result.query_string
         assert " AND " in query  # Uses AND operator

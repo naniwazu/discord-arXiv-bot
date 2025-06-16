@@ -1,9 +1,8 @@
 """Tests for the validator module."""
 
-import pytest
 
-from src.query_parser.validator import QueryValidator
 from src.query_parser.types import Token, TokenType
+from src.query_parser.validator import QueryValidator
 
 
 class TestQueryValidator:
