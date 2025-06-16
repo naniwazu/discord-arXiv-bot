@@ -151,6 +151,19 @@ class ArxivWebhookHandler:
                     if i == 0:
                         logger.info("Final first message size: %d chars (query_info: %d + message: %d)", 
                                    len(content), len(query_info), len(message.strip()))
+                        # If first message exceeds limit, send query_info separately
+                        if len(content) > self.MESSAGE_THRESHOLD:
+                            logger.warning("First message too long, splitting")
+                            await self._edit_deferred_response(
+                                interaction_data["token"],
+                                query_info.rstrip(),
+                            )
+                            await self._send_followup_message(
+                                interaction_data["token"],
+                                message.strip(),
+                            )
+                            continue
+                    
                     try:
                         # For first message, edit the deferred response
                         if i == 0:
