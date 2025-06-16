@@ -117,10 +117,6 @@ SORT_MAPPINGS = {
     "s": (arxiv.SortCriterion.SubmittedDate, arxiv.SortOrder.Descending),
     "r": (arxiv.SortCriterion.Relevance, arxiv.SortOrder.Descending),
     "l": (arxiv.SortCriterion.LastUpdatedDate, arxiv.SortOrder.Descending),
-    # Legacy format
-    "S": (arxiv.SortCriterion.SubmittedDate, arxiv.SortOrder.Descending),
-    "R": (arxiv.SortCriterion.Relevance, arxiv.SortOrder.Descending),
-    "L": (arxiv.SortCriterion.LastUpdatedDate, arxiv.SortOrder.Descending),
 }
 
 # Default sort

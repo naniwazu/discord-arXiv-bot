@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import arxiv
 import httpx
 
-from tools import parse
+from query_interface import parse
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -129,8 +129,8 @@ class ArxivScheduler:
                         )
                         continue
 
-                    # Add date range to query
-                    query_text = f"{topic} since:{since_string} until:{until_string}"
+                    # Add date range to query using modern syntax
+                    query_text = f"{topic} >{since_string} <{until_string}"
 
                     # Parse and execute query
                     search_query = parse(query_text)
