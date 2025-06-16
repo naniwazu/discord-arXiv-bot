@@ -75,10 +75,11 @@ class TestEdgeCases:
         assert "ti:quantum AND ti:computing" in result.query_string
 
     def test_only_prefixes(self):
-        """Test query with only prefixes."""
+        """Test query with only prefix characters (no content after them)."""
         result = self.parser.parse("@ # $")
         assert result.success
-        assert result.query_string == ""  # No valid tokens
+        # Prefix characters without content are treated as keywords
+        assert result.query_string == "ti:@ AND ti:# AND ti:$"
 
     def test_prefix_without_value(self):
         """Test prefix characters without values."""
@@ -127,10 +128,15 @@ class TestEdgeCases:
 
     def test_number_like_keywords(self):
         """Test keywords that look like numbers."""
+        # Test with number that exceeds limit (should fail validation)
         result = self.parser.parse("2023 conference")
-        assert result.success
-        # 2023 should be treated as a number (max_results)
-        assert result.search.max_results == 2023 or "ti:2023" in result.query_string
+        assert not result.success
+        assert "1-1000" in result.error
+        
+        # Test with valid number
+        result2 = self.parser.parse("50 conference")
+        assert result2.success
+        assert result2.search.max_results == 50
 
     def test_empty_quotes(self):
         """Test empty quoted string."""

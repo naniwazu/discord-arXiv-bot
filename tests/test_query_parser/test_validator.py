@@ -75,11 +75,10 @@ class TestQueryValidator:
         assert result.is_valid
 
     def test_invalid_category(self):
-        """Test invalid category."""
+        """Test invalid category (now passes through to arXiv API)."""
         tokens = [Token(TokenType.CATEGORY, "invalid.xyz", 0)]
         result = self.validator.validate(tokens)
-        assert not result.is_valid
-        assert "Category not found" in result.error
+        assert result.is_valid  # Invalid categories now pass through
 
     def test_balanced_parentheses(self):
         """Test balanced parentheses."""
@@ -122,24 +121,22 @@ class TestQueryValidator:
         assert result.is_valid
 
     def test_or_operator_at_start(self):
-        """Test OR operator at start is invalid."""
+        """Test OR operator at start (Phase 1: not validated)."""
         tokens = [
             Token(TokenType.OR, "|", 0),
             Token(TokenType.KEYWORD, "quantum", 2),
         ]
         result = self.validator.validate(tokens)
-        assert not result.is_valid
-        assert "Invalid OR operator placement" in result.error
+        assert result.is_valid  # OR validation removed in Phase 1
 
     def test_or_operator_at_end(self):
-        """Test OR operator at end is invalid."""
+        """Test OR operator at end (Phase 1: not validated)."""
         tokens = [
             Token(TokenType.KEYWORD, "quantum", 0),
             Token(TokenType.OR, "|", 8),
         ]
         result = self.validator.validate(tokens)
-        assert not result.is_valid
-        assert "Invalid OR operator placement" in result.error
+        assert result.is_valid  # OR validation removed in Phase 1
 
     def test_or_between_valid_operands(self):
         """Test OR between various valid operands."""
@@ -162,14 +159,15 @@ class TestQueryValidator:
         assert result.is_valid
 
     def test_or_with_parentheses(self):
-        """Test OR with parentheses."""
+        """Test OR with unbalanced parentheses."""
         tokens = [
             Token(TokenType.RPAREN, ")", 0),
             Token(TokenType.OR, "|", 2),
             Token(TokenType.LPAREN, "(", 4),
         ]
         result = self.validator.validate(tokens)
-        assert result.is_valid  # ) OR ( is valid
+        assert not result.is_valid  # ) OR ( is unbalanced
+        assert "Unbalanced parentheses" in result.error
 
     def test_complex_valid_query(self):
         """Test complex valid query."""

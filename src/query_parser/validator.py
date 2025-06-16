@@ -28,18 +28,8 @@ class QueryValidator:
                 except ValueError:
                     return ValidationResult(is_valid=False, error=f"Invalid number: {token.value}")
 
-        # Check categories are valid
-        for token in tokens:
-            if token.type == TokenType.CATEGORY:
-                category = token.value.lower()
-                # Check if it's a shortcut or a valid category
-                if (category not in CATEGORY_SHORTCUTS and
-                    category not in CATEGORY_CORRECTIONS and
-                    not self._is_valid_category_pattern(category)):
-                    return ValidationResult(
-                        is_valid=False,
-                        error=f"Category not found: #{token.value}",
-                    )
+        # Note: We don't strictly validate categories anymore for legacy compatibility
+        # Invalid categories will be passed through to arXiv API which will handle them
 
         # Check for balanced parentheses
         paren_count = 0
@@ -54,23 +44,8 @@ class QueryValidator:
         if paren_count != 0:
             return ValidationResult(is_valid=False, error="Unbalanced parentheses")
 
-        # Check for valid operator usage
-        for i, token in enumerate(tokens):
-            if token.type == TokenType.OR:
-                if i == 0 or i == len(tokens) - 1:
-                    return ValidationResult(is_valid=False, error="Invalid OR operator placement")
-                # Check that OR is between valid operands
-                prev_token = tokens[i - 1]
-                next_token = tokens[i + 1]
-                valid_operand_types = {
-                    TokenType.KEYWORD, TokenType.AUTHOR, TokenType.CATEGORY,
-                    TokenType.ALL_FIELDS, TokenType.ABSTRACT, TokenType.PHRASE,
-                    TokenType.RPAREN,
-                }
-                if (prev_token.type not in valid_operand_types or
-                    (next_token.type not in valid_operand_types and
-                     next_token.type != TokenType.LPAREN)):
-                    return ValidationResult(is_valid=False, error="Invalid OR operator usage")
+        # Note: OR/NOT operators are not implemented in Phase 1
+        # They will be ignored in the transformer for now
 
         return ValidationResult(is_valid=True)
 

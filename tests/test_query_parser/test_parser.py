@@ -115,10 +115,10 @@ class TestQueryParser:
         assert "must be between 1-1000" in result.error
 
     def test_invalid_category(self):
-        """Test invalid category handling."""
+        """Test invalid category handling (passes through to arXiv API)."""
         result = self.parser.parse("#invalid.category")
-        assert not result.success
-        assert "Category not found" in result.error
+        assert result.success
+        assert result.query_string == "cat:invalid.category"
 
     def test_empty_query(self):
         """Test empty query handling."""

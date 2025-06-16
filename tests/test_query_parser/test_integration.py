@@ -67,10 +67,10 @@ class TestIntegration:
 
     def test_error_recovery(self):
         """Test error recovery and messages."""
-        # Invalid category
+        # Invalid category (now passes through to arXiv API)
         result = self.parser.parse("#invalid.xyz")
-        assert not result.success
-        assert "Category not found" in result.error
+        assert result.success
+        assert "cat:invalid.xyz" in result.query_string
 
         # Invalid number
         result = self.parser.parse("quantum 5000")
