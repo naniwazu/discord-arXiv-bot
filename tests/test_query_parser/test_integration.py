@@ -2,11 +2,11 @@
 
 
 from src.query_parser import QueryParser
-from src.tools import parse as legacy_parse
+from src.query_interface import parse as interface_parse
 
 
 class TestIntegration:
-    """Test integration between components and with legacy parser."""
+    """Test integration between components and with query interface."""
 
     def setup_method(self):
         """Set up test fixtures."""
@@ -31,22 +31,22 @@ class TestIntegration:
         assert any(t["type"] == "KEYWORD" for t in tokens)
         assert any(t["type"] == "AUTHOR" for t in tokens)
 
-    def test_legacy_compatibility_simple(self):
-        """Test compatibility with legacy parser for simple queries."""
-        # Compare results with legacy parser
-        legacy_result = legacy_parse("ti:quantum au:hinton")
+    def test_interface_compatibility_simple(self):
+        """Test compatibility with query interface for simple queries."""
+        # Compare results with query interface
+        interface_result = interface_parse("ti:quantum au:hinton")
 
-        if legacy_result:
-            # Our parser treats this differently in Phase 1
+        if interface_result:
+            # Our parser treats this differently - uses modern syntax
             new_result = self.parser.parse("quantum @hinton")
             assert new_result.success
             # Both should search for quantum in title and hinton as author
 
-    def test_legacy_compatibility_categories(self):
+    def test_interface_compatibility_categories(self):
         """Test category handling compatibility."""
-        legacy_result = legacy_parse("cat:cs.AI")
+        interface_result = interface_parse("cat:cs.AI")
 
-        if legacy_result:
+        if interface_result:
             new_result = self.parser.parse("#cs.AI")
             assert new_result.success
             assert new_result.query_string == "cat:cs.AI"
@@ -82,10 +82,10 @@ class TestIntegration:
         assert not result.success
         assert "Empty query" in result.error
 
-    def test_tools_py_integration(self):
-        """Test integration through tools.py."""
-        # tools.py should use new parser when available
-        result = legacy_parse("quantum @hinton #cs.AI 20")
+    def test_query_interface_integration(self):
+        """Test integration through query_interface.py."""
+        # query_interface.py should use new parser when available
+        result = interface_parse("quantum @hinton #cs.AI 20")
 
         if result:
             # Should successfully parse with new syntax
