@@ -21,6 +21,7 @@ except ImportError:
 DEFAULT_RESULT_COUNT: int = 10
 RESULT_COUNT_LIMIT: int = 1000
 JST_OFFSET_HOURS: int = -9
+JST_TIMEZONE = datetime.timezone(datetime.timedelta(hours=JST_OFFSET_HOURS))
 
 # Date format constants
 DATE_FORMAT_YYYYMMDD = "%Y%m%d"
@@ -54,10 +55,10 @@ SEARCH_FIELDS: set[str] = {
 }
 
 DEFAULT_SINCE: datetime.datetime = datetime.datetime(
-    1900, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc,
+    1900, 1, 1, 0, 0, 0, tzinfo=JST_TIMEZONE,
 )
 DEFAULT_UNTIL: datetime.datetime = datetime.datetime(
-    2100, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc,
+    2100, 1, 1, 0, 0, 0, tzinfo=JST_TIMEZONE,
 )
 
 
@@ -122,33 +123,33 @@ def _parse_legacy(search_query: str) -> arxiv.Search | None:
             prefix, body = chunk.split(":")
             if prefix == "since":
                 if len(body) == YYYYMMDD_LENGTH:
-                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDD) + datetime.timedelta(
-                        hours=JST_OFFSET_HOURS,
+                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDD).replace(
+                        tzinfo=JST_TIMEZONE,
                     )
                 elif len(body) == YYYYMMDDHHMM_LENGTH:
-                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMM) + datetime.timedelta(
-                        hours=JST_OFFSET_HOURS,
+                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMM).replace(
+                        tzinfo=JST_TIMEZONE,
                     )
                 elif len(body) == YYYYMMDDHHMMSS_LENGTH:
-                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMMSS) + datetime.timedelta(
-                        hours=JST_OFFSET_HOURS,
+                    since = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMMSS).replace(
+                        tzinfo=JST_TIMEZONE,
                     )
                 else:
                     return None
                 continue
             if prefix == "until":
                 if len(body) == YYYYMMDD_LENGTH:
-                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDD) + datetime.timedelta(
-                        days=1,
-                        hours=JST_OFFSET_HOURS,
-                    )  # end of the day
+                    # end of the day
+                    until = (datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDD).replace(
+                        tzinfo=JST_TIMEZONE,
+                    ) + datetime.timedelta(days=1))
                 elif len(body) == YYYYMMDDHHMM_LENGTH:
-                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMM) + datetime.timedelta(
-                        hours=JST_OFFSET_HOURS,
+                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMM).replace(
+                        tzinfo=JST_TIMEZONE,
                     )
                 elif len(body) == YYYYMMDDHHMMSS_LENGTH:
-                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMMSS) + datetime.timedelta(
-                        hours=JST_OFFSET_HOURS,
+                    until = datetime.datetime.strptime(body, DATE_FORMAT_YYYYMMDDHHMMSS).replace(
+                        tzinfo=JST_TIMEZONE,
                     )
                 else:
                     return None
@@ -161,12 +162,9 @@ def _parse_legacy(search_query: str) -> arxiv.Search | None:
             return None
 
     if since != DEFAULT_SINCE or until != DEFAULT_UNTIL:
-        queries.append(
-            "submittedDate:[{} TO {}]".format(
-                datetime.datetime.strftime(since, DATE_FORMAT_YYYYMMDDHHMMSS),
-                datetime.datetime.strftime(until, DATE_FORMAT_YYYYMMDDHHMMSS),
-            ),
-        )
+        since_str = datetime.datetime.strftime(since, DATE_FORMAT_YYYYMMDDHHMMSS)
+        until_str = datetime.datetime.strftime(until, DATE_FORMAT_YYYYMMDDHHMMSS)
+        queries.append(f"submittedDate:[{since_str} TO {until_str}]")
 
     query = " AND ".join(queries)
     return arxiv.Search(
