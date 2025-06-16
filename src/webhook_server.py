@@ -148,6 +148,9 @@ class ArxivWebhookHandler:
                 if message.strip():
                     # Include query info in the first message
                     content = query_info + message.strip() if i == 0 else message.strip()
+                    if i == 0:
+                        logger.info("Final first message size: %d chars (query_info: %d + message: %d)", 
+                                   len(content), len(query_info), len(message.strip()))
                     try:
                         # For first message, edit the deferred response
                         if i == 0:
@@ -257,7 +260,13 @@ class ArxivWebhookHandler:
         count = 0
 
         # Adjust threshold for first message to account for query info
-        first_message_threshold = self.MESSAGE_THRESHOLD - query_info_length
+        # Ensure minimum threshold to avoid empty first messages
+        first_message_threshold = max(
+            self.MESSAGE_THRESHOLD - query_info_length,
+            self.MESSAGE_THRESHOLD // 2  # At least 1000 chars for content
+        )
+        logger.info("First message threshold: %d (2000 - %d, min: %d)", 
+                   first_message_threshold, query_info_length, self.MESSAGE_THRESHOLD // 2)
 
         for result in results:
             count += 1
@@ -289,6 +298,10 @@ class ArxivWebhookHandler:
             else:
                 message_list[-1] += summary
 
+        # Log final message sizes
+        for i, msg in enumerate(message_list):
+            logger.info("Message %d size: %d chars", i + 1, len(msg))
+        
         return message_list
 
 
