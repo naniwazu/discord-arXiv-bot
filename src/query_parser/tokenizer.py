@@ -21,6 +21,9 @@ class Tokenizer:
             # Phrases (highest priority)
             (r'"([^"]+)"', TokenType.PHRASE, 1, True),  # capture group 1, include quotes
 
+            # arXiv-style field specifications (ti:, au:, etc.) without parentheses
+            (r"(ti|au|abs|cat|all|co|jr|rn|id):(?!\()", TokenType.ARXIV_FIELD, 1, False),
+
             # Prefixed tokens
             (r"@(\S+)", TokenType.AUTHOR, 1, False),
             (r"#(\S+)", TokenType.CATEGORY, 1, False),

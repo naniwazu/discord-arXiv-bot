@@ -31,15 +31,21 @@ class QueryValidator:
         # Note: We don't strictly validate categories anymore for legacy compatibility
         # Invalid categories will be passed through to arXiv API which will handle them
 
-        # Check for balanced parentheses
+        # Check for balanced parentheses and empty parentheses
         paren_count = 0
-        for token in tokens:
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
             if token.type == TokenType.LPAREN:
                 paren_count += 1
+                # Check for empty parentheses
+                if i + 1 < len(tokens) and tokens[i + 1].type == TokenType.RPAREN:
+                    return ValidationResult(is_valid=False, error="Empty parentheses")
             elif token.type == TokenType.RPAREN:
                 paren_count -= 1
                 if paren_count < 0:
                     return ValidationResult(is_valid=False, error="Unbalanced parentheses")
+            i += 1
 
         if paren_count != 0:
             return ValidationResult(is_valid=False, error="Unbalanced parentheses")

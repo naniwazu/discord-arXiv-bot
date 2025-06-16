@@ -23,10 +23,11 @@ class QueryTransformer:
 
     def transform(self, tokens: list[Token]) -> arxiv.Search:
         """Transform tokens into an arXiv Search object."""
-        # Check if we have operators (Phase 2)
+        # Check if we have operators or parentheses (Phase 2/3)
         has_operators = any(token.type in (TokenType.OR, TokenType.NOT) for token in tokens)
+        has_parentheses = any(token.type in (TokenType.LPAREN, TokenType.RPAREN) for token in tokens)
         
-        if has_operators:
+        if has_operators or has_parentheses:
             return self._transform_with_operators(tokens)
         else:
             return self._transform_simple(tokens)
@@ -63,8 +64,12 @@ class QueryTransformer:
     def _token_to_query_part(self, token: Token) -> str | None:
         """Convert a single token to an arXiv query part."""
         if token.type == TokenType.KEYWORD:
-            # Default to title search
-            return f"ti:{token.value}"
+            # Check if this is a grouped expression (from parentheses processing)
+            if token.value.startswith("(") and token.value.endswith(")"):
+                return token.value  # Already processed grouped expression
+            else:
+                # Default to title search
+                return f"ti:{token.value}"
 
         if token.type == TokenType.AUTHOR:
             return f"au:{token.value}"
@@ -128,11 +133,14 @@ class QueryTransformer:
         )
 
     def _parse_query_expression(self, tokens: list[Token]) -> str:
-        """Parse query tokens with operator precedence."""
+        """Parse query tokens with operator precedence and parentheses."""
         if not tokens:
             return ""
 
-        # Split by OR operators first (lowest precedence)
+        # First handle parentheses (highest precedence)
+        tokens = self._process_parentheses(tokens)
+
+        # Split by OR operators (lowest precedence)
         or_groups = self._split_by_operator(tokens, TokenType.OR)
         
         if len(or_groups) > 1:
@@ -202,3 +210,106 @@ class QueryTransformer:
             groups.append(current_group)
         
         return groups if groups else [[]]
+
+    def _process_parentheses(self, tokens: list[Token]) -> list[Token]:
+        """Process parentheses by replacing them with grouped tokens."""
+        if not any(token.type in (TokenType.LPAREN, TokenType.RPAREN) for token in tokens):
+            return tokens
+        
+        result = []
+        i = 0
+        
+        while i < len(tokens):
+            token = tokens[i]
+            
+            if token.type == TokenType.LPAREN:
+                # Check if previous token is a field prefix
+                field_context = None
+                if i > 0:
+                    prev_token = tokens[i - 1]
+                    if prev_token.type in (TokenType.AUTHOR, TokenType.CATEGORY, 
+                                         TokenType.ALL_FIELDS, TokenType.ABSTRACT, TokenType.ARXIV_FIELD):
+                        field_context = prev_token
+                        # Remove the previous field token from result since we'll combine it
+                        result.pop()
+                
+                # Find matching closing parenthesis
+                paren_count = 1
+                j = i + 1
+                
+                while j < len(tokens) and paren_count > 0:
+                    if tokens[j].type == TokenType.LPAREN:
+                        paren_count += 1
+                    elif tokens[j].type == TokenType.RPAREN:
+                        paren_count -= 1
+                    j += 1
+                
+                if paren_count > 0:
+                    # Unmatched parentheses - this should be caught by validator
+                    # For now, treat as regular tokens
+                    result.append(token)
+                    i += 1
+                else:
+                    # Extract tokens inside parentheses
+                    inner_tokens = tokens[i + 1:j - 1]
+                    if inner_tokens:
+                        # Process inner tokens without infinite recursion
+                        inner_query = self._parse_parentheses_group(inner_tokens)
+                        if inner_query:
+                            if field_context:
+                                # Apply field context to the grouped expression
+                                if field_context.type == TokenType.ARXIV_FIELD:
+                                    # arXiv-style field (e.g., ti:)
+                                    field_prefix = f"{field_context.value}:"
+                                else:
+                                    # Other field types
+                                    field_prefix = self._get_field_prefix(field_context.type)
+                                grouped_token = Token(TokenType.KEYWORD, f"{field_prefix}({inner_query})", token.position)
+                            else:
+                                # Create a synthetic token for the grouped expression
+                                grouped_token = Token(TokenType.KEYWORD, f"({inner_query})", token.position)
+                            result.append(grouped_token)
+                    i = j
+            else:
+                result.append(token)
+                i += 1
+        
+        return result
+    
+    def _get_field_prefix(self, token_type: TokenType) -> str:
+        """Get the field prefix for a token type."""
+        if token_type == TokenType.AUTHOR:
+            return "au:"
+        elif token_type == TokenType.CATEGORY:
+            return "cat:"
+        elif token_type == TokenType.ALL_FIELDS:
+            return "all:"
+        elif token_type == TokenType.ABSTRACT:
+            return "abs:"
+        else:
+            return "ti:"  # Default to title
+    
+    def _parse_parentheses_group(self, tokens: list[Token]) -> str:
+        """Parse tokens inside parentheses without infinite recursion."""
+        if not tokens:
+            return ""
+        
+        # Check for nested parentheses and process them first
+        if any(token.type in (TokenType.LPAREN, TokenType.RPAREN) for token in tokens):
+            tokens = self._process_parentheses(tokens)
+        
+        # Now process OR operators
+        or_groups = self._split_by_operator(tokens, TokenType.OR)
+        
+        if len(or_groups) > 1:
+            # Multiple OR groups - join with OR
+            group_queries = []
+            for group in or_groups:
+                group_query = self._parse_and_expression(group)
+                if group_query:
+                    group_queries.append(group_query)
+            
+            return ' OR '.join(group_queries) if group_queries else ""
+        else:
+            # No OR operators, process as AND expression
+            return self._parse_and_expression(tokens)
