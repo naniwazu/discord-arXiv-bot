@@ -28,7 +28,8 @@ This is a serverless Discord bot that searches and shares arXiv research papers 
 ### Core Components
 1. **webhook_server.py** - FastAPI server handling Discord slash command interactions
 2. **scheduler.py** - Separate service for auto-channel processing
-3. **tools.py** - Query parser for arXiv search syntax
+3. **query_interface.py** - Main interface for query parsing (formerly tools.py)
+4. **query_parser/** - Modern query parser implementation with date support
 
 ### Key Features
 1. **Slash Commands**: `/arxiv query` - Interactive search with slash commands
@@ -194,3 +195,70 @@ git reset --hard <target-commit>
 - **Confirm target branch before running `git reset --hard`**
 - **Use `git fetch origin` + `git reset --hard origin/branch` to restore from remote**
 - **Destructive operations on wrong branch can lose hours of work instantly**
+
+### Commit Best Practices
+
+#### Logical Commit Separation
+**CRITICAL**: Always separate commits by logical units, not convenience or timing.
+
+#### Guidelines for Commit Separation
+1. **One Logical Change Per Commit**: Each commit should represent a single, complete logical change
+2. **Separate Different Types of Changes**:
+   - **Logic fixes** (bug fixes, algorithm changes)
+   - **Refactoring** (code cleanup, structure changes)
+   - **Linting/formatting** (style fixes, code formatting)
+   - **Documentation updates**
+   - **Configuration changes**
+
+#### Examples of Good Commit Separation
+```bash
+# BAD: Single commit with multiple logical changes
+git commit -m "Fix message threshold logic and ruff linting issues"
+
+# GOOD: Separate logical commits
+git commit -m "Remove complex first_message_sent logic for simplicity"
+git commit -m "Fix message threshold to account for query_info length" 
+git commit -m "Fix ruff linting errors (line length, magic numbers)"
+```
+
+#### Benefits of Proper Commit Separation
+- **Easier Code Review**: Each commit can be reviewed independently
+- **Safer Reverts**: Can revert specific changes without affecting others
+- **Clearer History**: Git log tells a clear story of what changed and why
+- **Better Debugging**: Git bisect works more effectively with focused commits
+
+#### When to Split Commits
+- **Multiple bug fixes** in one session
+- **Refactoring + feature addition** in same work
+- **Logic changes + style/linting fixes**
+- **Configuration updates + code changes**
+- **Any time you find yourself using "and" in commit messages**
+
+#### Lessons Learned (2025-01-16)
+- **Commit separation improves code maintainability significantly**
+- **Take time to think about logical boundaries before committing**
+- **Use `git add -p` for partial staging when needed**
+- **Better to have too many focused commits than too few broad ones**
+
+## Code Design Best Practices
+
+### Debugging and Logging Strategy
+**IMPORTANT**: Avoid adding excessive logging as first debugging approach.
+
+#### Debugging Workflow
+1. **Understand the Logic First**: Trace through code mentally before adding logs
+2. **Identify Root Cause**: Look for logical flaws, edge cases, and incorrect assumptions
+3. **Minimal Targeted Logging**: Only add logs for specific hypothesis testing
+4. **Remove Debug Logs**: Clean up debugging logs after issue resolution
+
+#### Message Processing Lessons (2025-01-16)
+- **Complex branching logic** often indicates design problems
+- **Special case handling** should be minimal and well-justified
+- **Simple, consistent logic** is more maintainable than complex edge case handling
+- **Parameter consideration**: Ensure all relevant data flows through function boundaries correctly
+
+#### Discord Message Handling
+- **Message limits**: Always account for Discord's 2000 character limit in all processing
+- **Query info addition**: When adding prefix text, reduce available space for content accordingly
+- **Carry-over logic**: Prefer complete units (papers) over arbitrary truncation
+- **Deferred responses**: Keep initial response simple, use followups for complex content

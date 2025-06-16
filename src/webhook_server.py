@@ -15,13 +15,6 @@ from nacl.signing import VerifyKey
 
 from .query_interface import parse
 
-# Try to import new parser for enhanced functionality
-try:
-    from .query_parser import QueryParser
-    USE_NEW_PARSER = True
-except ImportError:
-    USE_NEW_PARSER = False
-
 if TYPE_CHECKING:
     from collections.abc import Generator
 
@@ -110,18 +103,6 @@ class ArxivWebhookHandler:
 
             # Parse query
             search_query = parse(query_text)
-            query_info = ""
-
-            # Add query transformation info if new parser is available
-            if USE_NEW_PARSER and search_query is not None:
-                parser = QueryParser()
-                result = parser.parse(query_text)
-                if result.success and result.search:
-                    query_info = (
-                        f"→ Query: `{result.search.query}` "
-                        f"({result.search.max_results} results, "
-                        f"{result.search.sort_by.name} {result.search.sort_order.name})\n"
-                    )
 
             if search_query is None:
                 await self._edit_deferred_response(
@@ -132,63 +113,39 @@ class ArxivWebhookHandler:
 
             # Get results based on user query
             logger.info("Fetching results")
-            logger.info("Query info length: %d, content: %s", len(query_info), query_info[:100])
             results = self.arxiv_client.results(search_query)
-            message_list = self._process_results(results, len(query_info))
+            message_list = self._process_results(results)
+
+            # Send query info as deferred response
+            await self._edit_deferred_response(
+                interaction_data["token"],
+                "Processing your query...",
+            )
 
             if not message_list or not any(msg.strip() for msg in message_list):
-                await self._edit_deferred_response(
+                await self._send_followup_message(
                     interaction_data["token"],
-                    query_info + "No results found",
+                    "No results found",
                 )
                 return
 
-            # Send all messages as followups
-            for i, message in enumerate(message_list):
+            # Send all result messages as followups
+            for message in message_list:
                 if message.strip():
-                    # Include query info in the first message
-                    content = query_info + message.strip() if i == 0 else message.strip()
-                    if i == 0:
-                        logger.info("Final first message size: %d chars (query_info: %d + message: %d)", 
-                                   len(content), len(query_info), len(message.strip()))
-                        # If first message exceeds limit, send query_info separately
-                        if len(content) > self.MESSAGE_THRESHOLD:
-                            logger.warning("First message too long, splitting")
-                            await self._edit_deferred_response(
-                                interaction_data["token"],
-                                query_info.rstrip(),
-                            )
-                            await self._send_followup_message(
-                                interaction_data["token"],
-                                message.strip(),
-                            )
-                            continue
-                    
                     try:
-                        # For first message, edit the deferred response
-                        if i == 0:
-                            await self._edit_deferred_response(
-                                interaction_data["token"],
-                                content,
-                            )
-                        else:
-                            # For subsequent messages, send as followups
-                            await self._send_followup_message(
-                                interaction_data["token"],
-                                content,
-                            )
+                        await self._send_followup_message(
+                            interaction_data["token"],
+                            message.strip(),
+                        )
                     except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException):
-                        logger.exception("Timeout sending message %d", i + 1)
-                        # Continue with next message instead of failing completely
+                        logger.exception("Timeout sending followup message")
                         continue
                     except Exception:
-                        logger.exception("Failed to send message %d", i + 1)
-                        # Continue with next message instead of failing completely
+                        logger.exception("Failed to send followup message")
                         continue
 
-                    # Longer delay between messages to avoid rate limiting
-                    if i < len(message_list) - 1:
-                        await asyncio.sleep(1.5)
+                    # Delay between messages to avoid rate limiting
+                    await asyncio.sleep(1.5)
 
         except Exception as e:
             logger.exception("Error processing arxiv command")
@@ -202,13 +159,6 @@ class ArxivWebhookHandler:
         if not self.bot_token or not self.application_id:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
-
-        # Messages should already be properly sized by _process_results
-        if len(content) > self.MESSAGE_THRESHOLD:
-            logger.warning(
-                "Deferred response content exceeds Discord limit: %d chars. This should not happen.",
-                len(content),
-            )
 
         url = f"https://discord.com/api/v10/webhooks/{self.application_id}/{interaction_token}/messages/@original"
 
@@ -234,13 +184,6 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
-        # Messages should already be properly sized by _process_results
-        if len(content) > self.MESSAGE_THRESHOLD:
-            logger.warning(
-                "Followup message content exceeds Discord limit: %d chars. This should not happen.",
-                len(content),
-            )
-
         url = f"https://discord.com/api/v10/webhooks/{self.application_id}/{interaction_token}"
 
         headers = {
@@ -259,41 +202,22 @@ class ArxivWebhookHandler:
                     response.text,
                 )
 
-    def _process_results(
-        self, results: Generator[arxiv.Result], query_info_length: int = 0,
-    ) -> list[str]:
+    def _process_results(self, results: Generator[arxiv.Result]) -> list[str]:
         """Process arXiv results into Discord messages.
 
         Args:
             results: Generator of arXiv results
-            query_info_length: Length of query info that will be prepended to first message
 
         """
         message_list = [""]
         count = 0
 
-        # Adjust threshold for first message to account for query info
-        first_message_threshold = self.MESSAGE_THRESHOLD - query_info_length
-        logger.info("First message threshold: %d (2000 - %d)", 
-                   first_message_threshold, query_info_length)
-
         for result in results:
             count += 1
             content = f"**[{count}] {result.title}**\n<{result}>\n"
 
-            # Use different threshold for first message
-            is_first_message = len(message_list) == 1
-            current_threshold = (
-                first_message_threshold if is_first_message else self.MESSAGE_THRESHOLD
-            )
-
             # Check if adding this content would exceed the threshold
-            current_length = len(message_list[-1])
-            would_exceed = current_length + len(content) > current_threshold
-            if count <= 3:  # Log first 3 papers
-                logger.info("Paper %d: %d chars, current msg: %d, threshold: %d, would_exceed: %s", 
-                           count, len(content), current_length, current_threshold, would_exceed)
-            if would_exceed:
+            if len(message_list[-1]) + len(content) > self.MESSAGE_THRESHOLD:
                 # If the current message is not empty, start a new message
                 if message_list[-1].strip():
                     message_list.append(content)
@@ -312,10 +236,6 @@ class ArxivWebhookHandler:
             else:
                 message_list[-1] += summary
 
-        # Log final message sizes
-        for i, msg in enumerate(message_list):
-            logger.info("Message %d size: %d chars", i + 1, len(msg))
-        
         return message_list
 
 
@@ -331,6 +251,7 @@ class HandlerSingleton:
             cls._instance = ArxivWebhookHandler()
         return cls._instance
 
+
 def get_handler() -> ArxivWebhookHandler:
     """Get webhook handler instance."""
     return HandlerSingleton.get_instance()
@@ -338,7 +259,8 @@ def get_handler() -> ArxivWebhookHandler:
 
 @app.post("/interactions")
 async def interactions_endpoint(
-    request: Request, background_tasks: BackgroundTasks,
+    request: Request,
+    background_tasks: BackgroundTasks,
 ) -> JSONResponse:
     """Discord interactions endpoint."""
     handler = get_handler()
@@ -394,6 +316,7 @@ async def scheduler_endpoint() -> dict[str, str]:
     """Scheduler endpoint for auto channel processing."""
     try:
         from scheduler import ArxivScheduler
+
         scheduler = ArxivScheduler()
         await scheduler.run_scheduler()
     except Exception as e:
@@ -405,6 +328,7 @@ async def scheduler_endpoint() -> dict[str, str]:
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", "8000"))
     logger.info("Starting server on port %d", port)
     # Bind to all interfaces for Docker/Railway deployment
