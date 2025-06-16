@@ -18,7 +18,7 @@ from .types import Token, TokenType
 class QueryTransformer:
     """Transforms tokens into arXiv Search objects."""
 
-    def __init__(self, timezone_offset: int = DEFAULT_TIMEZONE_OFFSET):
+    def __init__(self, timezone_offset: int = DEFAULT_TIMEZONE_OFFSET) -> None:
         self.timezone_offset = timezone_offset
 
     def transform(self, tokens: list[Token]) -> arxiv.Search:

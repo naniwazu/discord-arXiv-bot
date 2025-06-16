@@ -5,14 +5,14 @@ import logging
 
 import arxiv
 
+logger = logging.getLogger(__name__)
+
 # Try to use new parser, fall back to legacy implementation
 try:
     from query_parser import QueryParser
     USE_NEW_PARSER = True
 except ImportError:
     USE_NEW_PARSER = False
-    import logging
-    logger = logging.getLogger(__name__)
     logger.warning("New query parser not available, using legacy implementation")
 
 DEFAULT_RESULT_COUNT: int = 10
@@ -70,7 +70,7 @@ def parse(search_query: str) -> arxiv.Search | None:
         if result.success:
             return result.search
         # Fall back to legacy parser on error
-        logging.info(f"New parser failed: {result.error}, falling back to legacy parser")
+        logger.info("New parser failed: %s, falling back to legacy parser", result.error)
         return _parse_legacy(search_query)
 
     # Use legacy parser
