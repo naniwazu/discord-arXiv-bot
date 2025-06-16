@@ -2,15 +2,14 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install poetry
-RUN pip install poetry
+# Install UV
+RUN pip install uv
 
-# Copy poetry files and README
-COPY pyproject.toml README.md ./
+# Copy project files
+COPY pyproject.toml uv.lock README.md ./
 
-# Configure poetry: don't create virtual env, install dependencies
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+# Install dependencies with UV
+RUN uv pip install --system -r uv.lock
 
 # Copy source code
 COPY src/ ./src/
