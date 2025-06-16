@@ -132,6 +132,7 @@ class ArxivWebhookHandler:
 
             # Get results based on user query
             logger.info("Fetching results")
+            logger.info("Query info length: %d, content: %s", len(query_info), query_info[:100])
             results = self.arxiv_client.results(search_query)
             message_list = self._process_results(results, len(query_info))
 
@@ -186,13 +187,10 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
-        # Truncate content if it exceeds Discord's limit
+        # Messages should already be properly sized by _process_results
         if len(content) > self.MESSAGE_THRESHOLD:
-            original_length = len(content)
-            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
             logger.warning(
-                "Deferred response truncated from %d to %d chars for Discord limit",
-                original_length,
+                "Deferred response content exceeds Discord limit: %d chars. This should not happen.",
                 len(content),
             )
 
@@ -220,13 +218,10 @@ class ArxivWebhookHandler:
             logger.error("DISCORD_BOT_TOKEN or DISCORD_APPLICATION_ID not set")
             return
 
-        # Truncate content if it exceeds Discord's limit
+        # Messages should already be properly sized by _process_results
         if len(content) > self.MESSAGE_THRESHOLD:
-            original_length = len(content)
-            content = content[:self.MESSAGE_THRESHOLD - 3] + "..."
             logger.warning(
-                "Followup content truncated from %d to %d chars for Discord limit",
-                original_length,
+                "Followup message content exceeds Discord limit: %d chars. This should not happen.",
                 len(content),
             )
 
