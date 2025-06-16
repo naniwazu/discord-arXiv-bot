@@ -273,13 +273,9 @@ class ArxivWebhookHandler:
         count = 0
 
         # Adjust threshold for first message to account for query info
-        # Ensure minimum threshold to avoid empty first messages
-        first_message_threshold = max(
-            self.MESSAGE_THRESHOLD - query_info_length,
-            self.MESSAGE_THRESHOLD // 2  # At least 1000 chars for content
-        )
-        logger.info("First message threshold: %d (2000 - %d, min: %d)", 
-                   first_message_threshold, query_info_length, self.MESSAGE_THRESHOLD // 2)
+        first_message_threshold = self.MESSAGE_THRESHOLD - query_info_length
+        logger.info("First message threshold: %d (2000 - %d)", 
+                   first_message_threshold, query_info_length)
 
         for result in results:
             count += 1
@@ -292,7 +288,12 @@ class ArxivWebhookHandler:
             )
 
             # Check if adding this content would exceed the threshold
-            if len(message_list[-1]) + len(content) > current_threshold:
+            current_length = len(message_list[-1])
+            would_exceed = current_length + len(content) > current_threshold
+            if count <= 3:  # Log first 3 papers
+                logger.info("Paper %d: %d chars, current msg: %d, threshold: %d, would_exceed: %s", 
+                           count, len(content), current_length, current_threshold, would_exceed)
+            if would_exceed:
                 # If the current message is not empty, start a new message
                 if message_list[-1].strip():
                     message_list.append(content)
