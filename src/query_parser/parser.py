@@ -17,11 +17,10 @@ class QueryParser:
 
     def __init__(self, timezone_offset: int = -9, *, debug: bool = False) -> None:
         """Initialize parser with components.
-        
+
         Args:
             timezone_offset: Timezone offset in hours (default: -9 for JST)
             debug: Whether to include debug information in results
-
         """
         self.tokenizer = Tokenizer()
         self.transformer = QueryTransformer(timezone_offset)
@@ -30,13 +29,12 @@ class QueryParser:
 
     def parse(self, query: str) -> ParseResult:
         """Parse a query string into an arXiv Search object.
-        
+
         Args:
             query: The query string to parse
-            
+
         Returns:
             ParseResult containing the search object or error information
-
         """
         try:
             # Tokenize
@@ -61,7 +59,7 @@ class QueryParser:
                 debug_info=self._get_debug_info(query, tokens, search) if self.debug else None,
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             return ParseResult(
                 success=False,
                 error=f"Parse error: {e!s}",

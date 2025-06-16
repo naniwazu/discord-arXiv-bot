@@ -102,14 +102,14 @@ class ArxivWebhookHandler:
             # Parse query
             search_query = parse(query_text)
             query_info = ""
-            
+
             # Add query transformation info if new parser is available
             if USE_NEW_PARSER and search_query is not None:
                 parser = QueryParser()
                 result = parser.parse(query_text)
                 if result.success and result.search:
                     query_info = f"→ Query: `{result.search.query}` ({result.search.max_results} results, {result.search.sort_by.name} {result.search.sort_order.name})\n"
-            
+
             if search_query is None:
                 await self._send_followup_message(
                     interaction_data["token"],

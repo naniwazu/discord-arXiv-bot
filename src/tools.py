@@ -67,11 +67,10 @@ def parse(search_query: str) -> arxiv.Search | None:
         result = parser.parse(search_query)
         if result.success:
             return result.search
-        else:
-            # Fall back to legacy parser on error
-            logging.info(f"New parser failed: {result.error}, falling back to legacy parser")
-            return _parse_legacy(search_query)
-    
+        # Fall back to legacy parser on error
+        logging.info(f"New parser failed: {result.error}, falling back to legacy parser")
+        return _parse_legacy(search_query)
+
     # Use legacy parser
     return _parse_legacy(search_query)
 

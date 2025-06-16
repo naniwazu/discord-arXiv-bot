@@ -11,7 +11,7 @@ from .types import Token, TokenType, ValidationResult
 class QueryValidator:
     """Validates tokens and provides error messages."""
 
-    def validate(self, tokens: List[Token]) -> ValidationResult:
+    def validate(self, tokens: list[Token]) -> ValidationResult:
         """Validate a list of tokens."""
         # Check for empty query
         if not tokens:

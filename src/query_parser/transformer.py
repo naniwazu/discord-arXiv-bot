@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-import datetime
-from typing import List, Optional, Tuple
-
 import arxiv
 
 from .constants import (
-    ARXIV_FIELDS,
     CATEGORY_CORRECTIONS,
     CATEGORY_SHORTCUTS,
     DEFAULT_RESULT_COUNT,
@@ -25,7 +21,7 @@ class QueryTransformer:
     def __init__(self, timezone_offset: int = DEFAULT_TIMEZONE_OFFSET):
         self.timezone_offset = timezone_offset
 
-    def transform(self, tokens: List[Token]) -> arxiv.Search:
+    def transform(self, tokens: list[Token]) -> arxiv.Search:
         """Transform tokens into an arXiv Search object."""
         # Extract components
         query_parts = []
@@ -54,7 +50,7 @@ class QueryTransformer:
             sort_order=sort_order,
         )
 
-    def _token_to_query_part(self, token: Token) -> Optional[str]:
+    def _token_to_query_part(self, token: Token) -> str | None:
         """Convert a single token to an arXiv query part."""
         if token.type == TokenType.KEYWORD:
             # Default to title search
@@ -95,7 +91,7 @@ class QueryTransformer:
         # Return as-is if no correction needed
         return category
 
-    def transform_with_operators(self, tokens: List[Token]) -> arxiv.Search:
+    def transform_with_operators(self, tokens: list[Token]) -> arxiv.Search:
         """Transform tokens with support for operators (Phase 2)."""
         # This will be implemented in Phase 2
         # For now, fall back to simple transform

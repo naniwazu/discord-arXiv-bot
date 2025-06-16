@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import List, Set
 
 from .constants import SORT_MAPPINGS
 from .types import Token, TokenType
@@ -36,7 +35,7 @@ class Tokenizer:
         ]
 
         # First pass: Extract special tokens
-        for pattern, token_type, capture_group, include_match in patterns:
+        for pattern, token_type, capture_group, _include_match in patterns:
             for match in re.finditer(pattern, query):
                 start = match.start()
                 end = match.end()
@@ -50,10 +49,7 @@ class Tokenizer:
                     consumed_positions.add(pos)
 
                 # Extract value
-                if capture_group > 0:
-                    value = match.group(capture_group)
-                else:
-                    value = match.group(0)
+                value = match.group(capture_group) if capture_group > 0 else match.group(0)
 
                 # Add token
                 tokens.append(Token(token_type, value, start))

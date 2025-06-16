@@ -44,12 +44,12 @@ class ParseResult:
     """Result of query parsing."""
 
     success: bool
-    search: Optional[arxiv.Search] = None
-    error: Optional[str] = None
-    debug_info: Optional[dict[str, Any]] = None
+    search: arxiv.Search | None = None
+    error: str | None = None
+    debug_info: dict[str, Any] | None = None
 
     @property
-    def query_string(self) -> Optional[str]:
+    def query_string(self) -> str | None:
         """Get the arxiv query string if successful."""
         return self.search.query if self.success and self.search else None
 
@@ -59,4 +59,4 @@ class ValidationResult:
     """Result of token validation."""
 
     is_valid: bool
-    error: Optional[str] = None
+    error: str | None = None
