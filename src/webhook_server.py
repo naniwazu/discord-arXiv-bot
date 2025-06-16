@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
-from query_interface import parse
+from src.query_interface import parse
 
 if TYPE_CHECKING:
     from collections.abc import Generator

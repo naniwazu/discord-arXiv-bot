@@ -101,7 +101,7 @@ class QueryValidator:
     def _is_valid_category_pattern(self, category: str) -> bool:
         """Check if a category follows valid arXiv category pattern."""
         import re
-        pattern = r"^[a-zA-Z]+[-.]?[a-zA-Z]*$"
+        pattern = r"^[a-zA-Z]+([-.][a-zA-Z]+)*$"
         return bool(re.match(pattern, category))
 
     def _is_valid_date_format(self, date_str: str) -> bool:

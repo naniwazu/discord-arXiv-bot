@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import arxiv
 import httpx
 
-from .query_interface import parse
+from src.query_interface import parse
 
 if TYPE_CHECKING:
     from collections.abc import Generator

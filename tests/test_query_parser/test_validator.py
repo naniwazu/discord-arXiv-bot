@@ -94,6 +94,21 @@ class TestQueryValidator:
         result = self.validator.validate(tokens)
         assert result.is_valid
 
+    def test_valid_complex_category_formats(self):
+        """Test valid complex arXiv category formats with multiple separators."""
+        test_cases = [
+            "cond-mat.str-el",  # Condensed matter - strongly correlated electrons
+            "physics.gen-ph",   # Physics - General Physics
+            "math-ph",          # Mathematical Physics
+            "nlin.CD",          # Nonlinear Sciences - Chaotic Dynamics
+            "astro-ph.CO",      # Astrophysics - Cosmology
+            "q-bio.QM",         # Quantitative Biology - Quantitative Methods
+        ]
+        for category in test_cases:
+            tokens = [Token(TokenType.CATEGORY, category, 0)]
+            result = self.validator.validate(tokens)
+            assert result.is_valid, f"Category {category} should be valid"
+
     def test_invalid_category(self):
         """Test invalid category (now passes through to arXiv API)."""
         tokens = [Token(TokenType.CATEGORY, "invalid.xyz", 0)]
