@@ -70,30 +70,41 @@ class QueryValidator:
                 prev_token = tokens[i - 1]
                 next_token = tokens[i + 1]
                 valid_operand_types = {
-                    TokenType.KEYWORD, TokenType.AUTHOR, TokenType.CATEGORY,
-                    TokenType.ALL_FIELDS, TokenType.ABSTRACT, TokenType.PHRASE,
+                    TokenType.KEYWORD,
+                    TokenType.AUTHOR,
+                    TokenType.CATEGORY,
+                    TokenType.ALL_FIELDS,
+                    TokenType.ABSTRACT,
+                    TokenType.PHRASE,
                     TokenType.RPAREN,
                 }
-                if (prev_token.type not in valid_operand_types or
-                    (next_token.type not in valid_operand_types and
-                     next_token.type != TokenType.LPAREN)):
+                if prev_token.type not in valid_operand_types or (
+                    next_token.type not in valid_operand_types
+                    and next_token.type != TokenType.LPAREN
+                ):
                     return ValidationResult(is_valid=False, error="Invalid OR operator usage")
 
             elif token.type == TokenType.NOT:
                 # NOT must be followed by a valid operand
                 if i == len(tokens) - 1:
                     return ValidationResult(
-                        is_valid=False, error="NOT operator must be followed by a term",
+                        is_valid=False,
+                        error="NOT operator must be followed by a term",
                     )
                 next_token = tokens[i + 1]
                 valid_operand_types = {
-                    TokenType.KEYWORD, TokenType.AUTHOR, TokenType.CATEGORY,
-                    TokenType.ALL_FIELDS, TokenType.ABSTRACT, TokenType.PHRASE,
+                    TokenType.KEYWORD,
+                    TokenType.AUTHOR,
+                    TokenType.CATEGORY,
+                    TokenType.ALL_FIELDS,
+                    TokenType.ABSTRACT,
+                    TokenType.PHRASE,
                     TokenType.LPAREN,
                 }
                 if next_token.type not in valid_operand_types:
                     return ValidationResult(
-                        is_valid=False, error="NOT operator must be followed by a valid term",
+                        is_valid=False,
+                        error="NOT operator must be followed by a valid term",
                     )
 
         return ValidationResult(is_valid=True)
@@ -101,10 +112,11 @@ class QueryValidator:
     def _is_valid_category_pattern(self, category: str) -> bool:
         """Check if a category follows valid arXiv category pattern."""
         # For quoted categories, be very permissive and let arXiv handle validation
-        if ' ' in category or '"' in category:
+        if " " in category or '"' in category:
             return True
-            
+
         import re
+
         # Allow categories like 'cs', 'cs.AI', 'cond-mat.str-el', 'physics.*', etc.
         pattern = r"^[a-zA-Z]+([-.][a-zA-Z*]+)*$"
         return bool(re.match(pattern, category))

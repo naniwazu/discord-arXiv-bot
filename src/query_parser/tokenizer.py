@@ -20,26 +20,19 @@ class Tokenizer:
         patterns = [
             # Field prefixes with quotes (highest priority)
             (r'@"([^"]+)"', TokenType.AUTHOR, 1, True),  # @"phrase"
-            (r'#"([^"]+)"', TokenType.CATEGORY, 1, True),  # #"phrase"  
+            (r'#"([^"]+)"', TokenType.CATEGORY, 1, True),  # #"phrase"
             (r'\*"([^"]+)"', TokenType.ALL_FIELDS, 1, True),  # *"phrase"
             (r'\$"([^"]+)"', TokenType.ABSTRACT, 1, True),  # $"phrase"
-
             # Phrases (high priority)
             (r'"([^"]+)"', TokenType.PHRASE, 1, True),  # capture group 1, include quotes
-
             # Date patterns (high priority, before other < > patterns)
             (r">(\d{8,14})", TokenType.DATE_GT, 1, False),
             (r"<(\d{8,14})(?!\S)", TokenType.DATE_LT, 1, False),  # Don't match <@mentions
-
-            # arXiv-style field specifications (ti:, au:, etc.) without parentheses
-            (r"(ti|au|abs|cat|all|co|jr|rn|id):(?!\()", TokenType.ARXIV_FIELD, 1, False),
-
             # Prefixed tokens
             (r"@(\S+)", TokenType.AUTHOR, 1, False),
             (r"#(\S+)", TokenType.CATEGORY, 1, False),
             (r"\*(\S+)", TokenType.ALL_FIELDS, 1, False),
             (r"\$(\S+)", TokenType.ABSTRACT, 1, False),
-
             # Operators
             (r"\|", TokenType.OR, 0, False),
             (r"-(?=\S)", TokenType.NOT, 0, False),

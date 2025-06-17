@@ -98,9 +98,9 @@ class QueryTransformer:
                 value = self._normalize_category(token.value)
             else:
                 value = token.value
-            
+
             # Add quotes if value contains spaces or if it came from a quoted field
-            if ' ' in value or ('"' in value):
+            if " " in value or ('"' in value):
                 # If value already has quotes, use as-is, otherwise add quotes
                 if value.startswith('"') and value.endswith('"'):
                     return f"{field_prefix}:{value}"
@@ -242,7 +242,9 @@ class QueryTransformer:
         return " AND ".join(query_parts) if query_parts else ""
 
     def _split_by_operator(
-        self, tokens: list[Token], operator_type: TokenType,
+        self,
+        tokens: list[Token],
+        operator_type: TokenType,
     ) -> list[list[Token]]:
         """Split tokens by the specified operator."""
         groups = []
@@ -281,7 +283,10 @@ class QueryTransformer:
         return result
 
     def _process_single_parenthesis_group(
-        self, tokens: list[Token], start_idx: int, result: list[Token],
+        self,
+        tokens: list[Token],
+        start_idx: int,
+        result: list[Token],
     ) -> int:
         """Process a single parenthesis group and return the next index."""
         # Check if previous token is a field prefix
@@ -301,14 +306,19 @@ class QueryTransformer:
             inner_query = self._parse_parentheses_group(inner_tokens)
             if inner_query:
                 grouped_token = self._create_grouped_token(
-                    field_context, inner_query, tokens[start_idx].position,
+                    field_context,
+                    inner_query,
+                    tokens[start_idx].position,
                 )
                 result.append(grouped_token)
 
         return end_idx + 1
 
     def _extract_field_context(
-        self, tokens: list[Token], start_idx: int, result: list[Token],
+        self,
+        tokens: list[Token],
+        start_idx: int,
+        result: list[Token],
     ) -> Token | None:
         """Extract field context from previous token if applicable."""
         if start_idx == 0:
@@ -320,7 +330,6 @@ class QueryTransformer:
             TokenType.CATEGORY,
             TokenType.ALL_FIELDS,
             TokenType.ABSTRACT,
-            TokenType.ARXIV_FIELD,
         )
 
         if prev_token.type in field_types:
@@ -345,14 +354,14 @@ class QueryTransformer:
         return j - 1 if paren_count == 0 else -1
 
     def _create_grouped_token(
-        self, field_context: Token | None, inner_query: str, position: int,
+        self,
+        field_context: Token | None,
+        inner_query: str,
+        position: int,
     ) -> Token:
         """Create a grouped token with optional field context."""
         if field_context:
-            if field_context.type == TokenType.ARXIV_FIELD:
-                field_prefix = f"{field_context.value}:"
-            else:
-                field_prefix = self._get_field_prefix(field_context.type)
+            field_prefix = self._get_field_prefix(field_context.type)
             return Token(TokenType.KEYWORD, f"{field_prefix}({inner_query})", position)
 
         return Token(TokenType.KEYWORD, f"({inner_query})", position)
@@ -399,14 +408,20 @@ class QueryTransformer:
             if len(date_str) == 8:  # YYYYMMDD
                 return datetime.datetime.strptime(date_str, "%Y%m%d").replace(tzinfo=self.timezone)
             elif len(date_str) == 12:  # YYYYMMDDHHMM
-                return datetime.datetime.strptime(date_str, "%Y%m%d%H%M").replace(tzinfo=self.timezone)
+                return datetime.datetime.strptime(date_str, "%Y%m%d%H%M").replace(
+                    tzinfo=self.timezone
+                )
             elif len(date_str) == 14:  # YYYYMMDDHHMMSS
-                return datetime.datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(tzinfo=self.timezone)
+                return datetime.datetime.strptime(date_str, "%Y%m%d%H%M%S").replace(
+                    tzinfo=self.timezone
+                )
         except ValueError:
             pass
         return None
 
-    def _build_date_query(self, since_date: datetime.datetime | None, until_date: datetime.datetime | None) -> str | None:
+    def _build_date_query(
+        self, since_date: datetime.datetime | None, until_date: datetime.datetime | None
+    ) -> str | None:
         """Build arXiv date range query."""
         if not since_date and not until_date:
             return None
