@@ -1,6 +1,5 @@
 """Tests for edge cases and error handling."""
 
-
 from src.query_parser import QueryParser
 
 
@@ -88,10 +87,11 @@ class TestEdgeCases:
         # @ should be ignored, treated as separate tokens
 
     def test_consecutive_operators(self):
-        """Test consecutive operators."""
+        """Test consecutive operators should be rejected."""
         result = self.parser.parse("quantum || neural")
-        assert result.success
-        # Should handle gracefully
+        assert not result.success
+        # Consecutive operators should be caught by validation
+        assert "Invalid OR operator" in result.error
 
     def test_mixed_case_sort(self):
         """Test mixed case sort specifiers."""
@@ -172,7 +172,8 @@ class TestEdgeCases:
         # Depends on implementation - might use last number or treat as keywords
 
     def test_prefixes_with_numbers(self):
-        """Test prefixes with numeric values."""
+        """Test prefixes with numeric values should be rejected for categories."""
         result = self.parser.parse("@123 #123")
-        assert result.success
-        # Numbers after prefixes should work
+        assert not result.success
+        # Category with only numbers should be rejected by validation
+        assert "Invalid category format" in result.error

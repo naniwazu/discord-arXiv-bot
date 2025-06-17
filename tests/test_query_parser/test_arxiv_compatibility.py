@@ -1,6 +1,5 @@
 """Tests for arXiv API compatibility and detailed query mode."""
 
-
 from src.query_parser import QueryParser
 
 

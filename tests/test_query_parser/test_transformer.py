@@ -1,6 +1,5 @@
 """Tests for the transformer module."""
 
-
 from src.query_parser.transformer import QueryTransformer
 from src.query_parser.types import Token, TokenType
 
@@ -149,7 +148,7 @@ class TestQueryTransformer:
         ]
         search = self.transformer.transform(tokens)
         # OR operator creates OR query
-        assert search.query == "(ti:quantum OR ti:neural)"
+        assert search.query == "ti:quantum OR ti:neural"
 
     def test_parentheses_processing(self):
         """Test that parentheses are correctly processed."""
