@@ -140,23 +140,23 @@ class TestQueryTransformer:
         assert search.query == ""
         assert search.max_results == 10
 
-    def test_operators_ignored_phase1(self):
-        """Test that operators are ignored in Phase 1."""
+    def test_or_operator_processing(self):
+        """Test that OR operators are correctly processed."""
         tokens = [
             Token(TokenType.KEYWORD, "quantum", 0),
             Token(TokenType.OR, "|", 8),
             Token(TokenType.KEYWORD, "neural", 10),
         ]
         search = self.transformer.transform(tokens)
-        # OR is ignored, keywords are ANDed
-        assert search.query == "ti:quantum AND ti:neural"
+        # OR operator creates OR query
+        assert search.query == "(ti:quantum OR ti:neural)"
 
-    def test_parentheses_ignored_phase1(self):
-        """Test that parentheses are ignored in Phase 1."""
+    def test_parentheses_processing(self):
+        """Test that parentheses are correctly processed."""
         tokens = [
             Token(TokenType.LPAREN, "(", 0),
             Token(TokenType.KEYWORD, "quantum", 1),
             Token(TokenType.RPAREN, ")", 8),
         ]
         search = self.transformer.transform(tokens)
-        assert search.query == "ti:quantum"
+        assert search.query == "(ti:quantum)"
