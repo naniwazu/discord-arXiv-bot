@@ -124,18 +124,20 @@ class TestDateValidation:
         self.parser = QueryParser()
 
     def test_invalid_date_format_short(self) -> None:
-        """Test invalid date format (too short)."""
+        """Test invalid date format (too short) - treated as keyword."""
         result = self.parser.parse("quantum >2024")
         
-        assert not result.success
-        assert "Invalid date format" in result.error
+        assert result.success
+        # Invalid date format becomes keyword
+        assert "ti:>2024" in result.query_string
 
     def test_invalid_date_format_long(self) -> None:
-        """Test invalid date format (too long)."""
+        """Test invalid date format (too long) - treated as keyword."""
         result = self.parser.parse("quantum >202401011430001")
         
-        assert not result.success
-        assert "Invalid date format" in result.error
+        assert result.success
+        # Invalid date format becomes keyword
+        assert "ti:>202401011430001" in result.query_string
 
     def test_invalid_date_values(self) -> None:
         """Test invalid date values."""

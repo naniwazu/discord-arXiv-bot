@@ -98,7 +98,16 @@ class QueryTransformer:
                 value = self._normalize_category(token.value)
             else:
                 value = token.value
-            return f"{field_prefix}:{value}"
+            
+            # Add quotes if value contains spaces or if it came from a quoted field
+            if ' ' in value or ('"' in value):
+                # If value already has quotes, use as-is, otherwise add quotes
+                if value.startswith('"') and value.endswith('"'):
+                    return f"{field_prefix}:{value}"
+                else:
+                    return f'{field_prefix}:"{value}"'
+            else:
+                return f"{field_prefix}:{value}"
 
         if token.type == TokenType.PHRASE:
             return f'ti:"{token.value}"'

@@ -18,7 +18,13 @@ class Tokenizer:
 
         # Pattern for matching tokens
         patterns = [
-            # Phrases (highest priority)
+            # Field prefixes with quotes (highest priority)
+            (r'@"([^"]+)"', TokenType.AUTHOR, 1, True),  # @"phrase"
+            (r'#"([^"]+)"', TokenType.CATEGORY, 1, True),  # #"phrase"  
+            (r'\*"([^"]+)"', TokenType.ALL_FIELDS, 1, True),  # *"phrase"
+            (r'\$"([^"]+)"', TokenType.ABSTRACT, 1, True),  # $"phrase"
+
+            # Phrases (high priority)
             (r'"([^"]+)"', TokenType.PHRASE, 1, True),  # capture group 1, include quotes
 
             # Date patterns (high priority, before other < > patterns)

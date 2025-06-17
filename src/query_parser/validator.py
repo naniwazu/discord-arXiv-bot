@@ -100,6 +100,10 @@ class QueryValidator:
 
     def _is_valid_category_pattern(self, category: str) -> bool:
         """Check if a category follows valid arXiv category pattern."""
+        # For quoted categories, be very permissive and let arXiv handle validation
+        if ' ' in category or '"' in category:
+            return True
+            
         import re
         # Allow categories like 'cs', 'cs.AI', 'cond-mat.str-el', 'physics.*', etc.
         pattern = r"^[a-zA-Z]+([-.][a-zA-Z*]+)*$"
