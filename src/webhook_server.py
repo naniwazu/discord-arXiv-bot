@@ -111,6 +111,11 @@ class ArxivWebhookHandler:
                 )
                 return
 
+            # Create query info message
+            query_info = f"→ Query: `{search_query.query}`\n"
+            query_info += f"→ Results: {search_query.max_results}\n"
+            query_info += f"→ Sort: {search_query.sort_by.name} ({search_query.sort_order.name})"
+
             # Get results based on user query
             logger.info("Fetching results")
             results = self.arxiv_client.results(search_query)
@@ -119,7 +124,7 @@ class ArxivWebhookHandler:
             # Send query info as deferred response
             await self._edit_deferred_response(
                 interaction_data["token"],
-                "Processing your query...",
+                query_info,
             )
 
             if not message_list or not any(msg.strip() for msg in message_list):
