@@ -102,9 +102,9 @@ class Tokenizer:
         # Check if it's a number
         if word.isdigit():
             tokens.append(Token(TokenType.NUMBER, word, position))
-        # Check if it's a sort specifier
-        elif word in SORT_MAPPINGS:
-            tokens.append(Token(TokenType.SORT, word, position))
+        # Check if it's a sort specifier (case insensitive)
+        elif word.lower() in SORT_MAPPINGS:
+            tokens.append(Token(TokenType.SORT, word.lower(), position))
         # Otherwise it's a keyword
         else:
             tokens.append(Token(TokenType.KEYWORD, word, position))
