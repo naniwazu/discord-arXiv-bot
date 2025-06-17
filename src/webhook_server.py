@@ -112,15 +112,21 @@ class ArxivWebhookHandler:
                 return
 
             # Create query info message
-            sort_short = "rd" if search_query.sort_order.name == "Descending" else "ra"
-            if search_query.sort_by.name == "Relevance":
-                sort_short = sort_short.replace("d", "").replace("a", "")  # "r" for relevance
-            elif search_query.sort_by.name == "LastUpdatedDate":
-                sort_short = "l" + sort_short[1]  # "ld" or "la"
+            sort_name = {
+                "SubmittedDate": "📅 Submitted Date",
+                "Relevance": "🎯 Relevance",
+                "LastUpdatedDate": "🔄 Last Updated",
+            }.get(search_query.sort_by.name, search_query.sort_by.name)
 
-            query_info = (
-                f"`{search_query.query}` • {search_query.max_results} results • sort:{sort_short}"
-            )
+            order_icon = "⬇️" if search_query.sort_order.name == "Descending" else "⬆️"
+
+            query_info = f"""🔍 **Search Query**
+```
+{search_query.query}
+```
+📊 **Parameters**
+• Results: `{search_query.max_results}`
+• Sort: {sort_name} {order_icon}"""
 
             # Get results based on user query
             logger.info("Fetching results")
