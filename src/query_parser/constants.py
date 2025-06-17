@@ -16,6 +16,11 @@ CATEGORY_SHORTCUTS = {
     "econ": "econ.*",
     "q-bio": "q-bio.*",
     "q-fin": "q-fin.*",
+    "cond-mat": "cond-mat.*",
+    "astro-ph": "astro-ph.*",
+    "quant-ph": "quant-ph.*",
+    "nlin": "nlin.*",
+    "math-ph": "math-ph.*",
 }
 
 # Category name corrections (lowercase -> correct case)

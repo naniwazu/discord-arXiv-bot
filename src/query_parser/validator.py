@@ -101,13 +101,14 @@ class QueryValidator:
     def _is_valid_category_pattern(self, category: str) -> bool:
         """Check if a category follows valid arXiv category pattern."""
         import re
-        pattern = r"^[a-zA-Z]+([-.][a-zA-Z]+)*$"
+        # Allow categories like 'cs', 'cs.AI', 'cond-mat.str-el', 'physics.*', etc.
+        pattern = r"^[a-zA-Z]+([-.][a-zA-Z*]+)*$"
         return bool(re.match(pattern, category))
 
     def _is_valid_date_format(self, date_str: str) -> bool:
         """Check if date string is in valid format."""
         import datetime
-        
+
         if len(date_str) == 8:  # YYYYMMDD
             try:
                 datetime.datetime.strptime(date_str, "%Y%m%d")
@@ -126,5 +127,5 @@ class QueryValidator:
                 return True
             except ValueError:
                 return False
-        
+
         return False
