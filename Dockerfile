@@ -18,4 +18,5 @@ COPY src/ ./src/
 EXPOSE 8000
 
 # Command to run the webhook server
+ENV PYTHONPATH=/app
 CMD ["python", "-m", "src.webhook_server"]
