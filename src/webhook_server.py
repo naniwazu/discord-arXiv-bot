@@ -120,13 +120,8 @@ class ArxivWebhookHandler:
 
             order_icon = "⬇️" if search_query.sort_order.name == "Descending" else "⬆️"
 
-            query_info = f"""🔍 **Search Query**
-```
-{search_query.query}
-```
-📊 **Parameters**
-• Results: `{search_query.max_results}`
-• Sort: {sort_name} {order_icon}"""
+            query_info = f"""🔍 `{search_query.query}`
+📊 Up to {search_query.max_results} results • Ordered by {sort_name} {order_icon}"""
 
             # Get results based on user query
             logger.info("Fetching results")
