@@ -68,6 +68,9 @@ max-args = 6
     "F841",    # unused variables OK in tests (for crash testing)
     "ERA001",  # commented code OK in tests
 ]
+"src/webhook_server.py" = [
+    "PLC0415", # conditional imports are needed for optional scheduler module
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
