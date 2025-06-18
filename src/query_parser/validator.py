@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import datetime
+import re
+
 from .constants import RESULT_COUNT_LIMIT
 from .control_data import (
     DATE_FORMAT_YYYYMMDD,
@@ -134,16 +137,12 @@ class QueryValidator:
         if " " in category or '"' in category:
             return True
 
-        import re
-
         # Allow categories like 'cs', 'cs.AI', 'cond-mat.str-el', 'physics.*', etc.
         pattern = r"^[a-zA-Z]+([-.][a-zA-Z*]+)*$"
         return bool(re.match(pattern, category))
 
     def _is_valid_date_format(self, date_str: str) -> bool:  # noqa: PLR0911
         """Check if date string is in valid format."""
-        import datetime
-
         # JST timezone (UTC+9)
         jst = datetime.timezone(datetime.timedelta(hours=9))
 
@@ -173,8 +172,6 @@ class QueryValidator:
 
     def _is_malformed_date(self, keyword: str) -> bool:
         """Check if keyword looks like a malformed date operator."""
-        import re
-
         # Check for date operator patterns that are malformed
         # e.g., >20240101xy, <20241301abc, >202401011430001, etc.
         date_pattern = r"^[><](\d+[a-zA-Z]+|\d{9,11}|\d{13}|\d{15,})$"
