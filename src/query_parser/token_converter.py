@@ -8,7 +8,7 @@ from .types import Token, TokenType
 
 class TokenToQueryConverter:
     """Converts tokens to arXiv query string parts.
-    
+
     Single responsibility: Token → Query string conversion only.
     Eliminates duplication between transformer.py and parentheses_processor.py.
     """
@@ -17,7 +17,7 @@ class TokenToQueryConverter:
         """Initialize field mappings."""
         self.field_mapping = {
             TokenType.AUTHOR: "au",
-            TokenType.CATEGORY: "cat", 
+            TokenType.CATEGORY: "cat",
             TokenType.ALL_FIELDS: "all",
             TokenType.ABSTRACT: "abs",
         }
@@ -26,13 +26,13 @@ class TokenToQueryConverter:
         """Convert a single token to an arXiv query part."""
         if token.type == TokenType.KEYWORD:
             return self._handle_keyword_token(token)
-        
+
         if token.type == TokenType.PHRASE:
             return self._handle_phrase_token(token)
-            
+
         if token.type in self.field_mapping:
             return self._handle_field_token(token)
-            
+
         # Operators and parentheses are not handled here
         return None
 
@@ -63,7 +63,7 @@ class TokenToQueryConverter:
             if value.startswith('"') and value.endswith('"'):
                 return f"{field_prefix}:{value}"
             return f'{field_prefix}:"{value}"'
-        
+
         return f"{field_prefix}:{value}"
 
     def _normalize_category(self, category: str) -> str:

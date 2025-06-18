@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from .types import Token, TokenType
+
 
 class QueryStringBuilder:
     """Builds arXiv query strings from components.
-    
+
     Single responsibility: Query string construction only.
     Handles AND/OR precedence and grouping logic.
     """
@@ -26,7 +28,7 @@ class QueryStringBuilder:
         """Build grouped expression with optional field prefix."""
         if not content:
             return ""
-        
+
         if field_prefix:
             return f"{field_prefix}({content})"
         return f"({content})"
@@ -39,9 +41,6 @@ class QueryStringBuilder:
 
     def split_by_or(self, items: list) -> list[list]:
         """Split items by OR tokens, returning groups."""
-        # Import here to avoid circular imports
-        from .types import Token, TokenType
-        
         groups = []
         current_group = []
 
