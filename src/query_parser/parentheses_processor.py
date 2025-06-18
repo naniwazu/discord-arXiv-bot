@@ -187,7 +187,6 @@ class ParenthesesProcessor:
             return self.token_converter.convert(item)
         return None
 
-
     def _field_prefix_to_type(self, prefix: str) -> TokenType:
         """Convert field prefix back to token type."""
         prefix_to_type = {
@@ -197,4 +196,3 @@ class ParenthesesProcessor:
             "abs:": TokenType.ABSTRACT,
         }
         return prefix_to_type.get(prefix, TokenType.KEYWORD)
-

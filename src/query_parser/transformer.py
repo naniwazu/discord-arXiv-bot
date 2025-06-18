@@ -66,7 +66,6 @@ class QueryTransformer:
         # Build AND expression using dedicated builder
         return self.query_builder.build_and_expression(query_parts)
 
-
     def _build_complex_query(self, content_tokens: list[Token]) -> str:
         """Build complex query with operators and parentheses from content tokens."""
         return self._parse_query_expression(content_tokens)
@@ -84,4 +83,3 @@ class QueryTransformer:
 
         # Build query from processed items (mix of tokens and grouped expressions)
         return self.parentheses_processor.build_query_from_processed_items(processed_items)
-
