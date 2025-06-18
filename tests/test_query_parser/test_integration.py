@@ -1,8 +1,7 @@
 """Integration tests for the complete query parser system."""
 
-
-from src.query_parser import QueryParser
 from src.query_interface import parse as interface_parse
+from src.query_parser import QueryParser
 
 
 class TestIntegration:
@@ -98,21 +97,17 @@ class TestIntegration:
             "transformer",
             "attention mechanism",
             "bert 50",
-
             # Author searches
             "@bengio",
             "@yann.lecun",
-
             # Category searches
             "#cs.LG",
             "#stat.ML",
             "#cs",
-
             # Combined searches
             "transformer @vaswani #cs.CL",
             "neural @hinton 100 rd",
             '"vision transformer" #cs.CV 50',
-
             # Multiple authors/categories
             "@hinton @bengio #cs.AI #cs.LG",
         ]
@@ -144,18 +139,19 @@ class TestIntegration:
         """Test that categories work with different case variations."""
         # Test that all case variations are successfully parsed
         test_cases = [
-            "#cs.AI",          # Mixed case (standard)
-            "#cs.ai",          # All lowercase
-            "#CS.AI",          # All uppercase
-            "#cs.CR",          # Cryptography & Security
-            "#quant-ph",       # With dash
-            "#math.GM",        # Mathematics
+            "#cs.AI",  # Mixed case (standard)
+            "#cs.ai",  # All lowercase
+            "#CS.AI",  # All uppercase
+            "#cs.CR",  # Cryptography & Security
+            "#quant-ph",  # With dash
+            "#math.GM",  # Mathematics
         ]
 
         for input_query in test_cases:
             result = self.parser.parse(input_query)
             assert result.success, f"Failed to parse: {input_query}"
-            assert result.query_string.startswith("cat:"), f"Query should start with 'cat:' for {input_query}"
+            msg = f"Query should start with 'cat:' for {input_query}"
+            assert result.query_string.startswith("cat:"), msg
             assert len(result.query_string) > 4, f"Query string too short for {input_query}"
 
     def test_combined_features(self):

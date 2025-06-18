@@ -1,6 +1,5 @@
 """Tests for arXiv API compatibility and detailed query mode."""
 
-
 from src.query_parser import QueryParser
 
 
@@ -93,10 +92,11 @@ class TestArxivCompatibility:
         # Treated as keyword:keyword in our parser
 
     def test_arxiv_report_number_field(self):
-        """Test report number field (rn:) - not in our shortcuts."""
+        """Test report number field (rn:) - treated as title search."""
         result = self.parser.parse("rn:1234")
         assert result.success
-        # Treated as keyword:keyword in our parser
+        # Becomes ti:rn:1234 in our parser
+        assert "ti:rn:1234" in result.query_string
 
     def test_arxiv_id_field(self):
         """Test ID field - not in our shortcuts."""

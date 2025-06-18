@@ -1,110 +1,111 @@
-"""Tokenizer for query parser."""
+"""Simplified single-pass tokenizer for query parser."""
 
 from __future__ import annotations
 
 import re
+from typing import ClassVar, NamedTuple
 
 from .constants import SORT_MAPPINGS
 from .types import Token, TokenType
 
+# Maximum digits for result count numbers
+MAX_RESULT_COUNT_DIGITS = 4
+
+
+class TokenPattern(NamedTuple):
+    """Defines a token pattern with its type."""
+
+    regex: str
+    token_type: TokenType
+    capture_group: int = 1
+
 
 class Tokenizer:
-    """Tokenizes query strings into structured tokens."""
+    """Simplified single-pass tokenizer with clear pattern priorities."""
 
-    def tokenize(self, query: str) -> list[Token]:
-        """Tokenize a query string into a list of tokens."""
-        tokens = []
-        consumed_positions: set[int] = set()
+    # Patterns defined in priority order (higher priority = earlier in list)
+    PATTERNS: ClassVar[list[TokenPattern]] = [
+        # Quoted field prefixes (highest priority)
+        TokenPattern(r'@"([^"]+)"', TokenType.AUTHOR),
+        TokenPattern(r'#"([^"]+)"', TokenType.CATEGORY),
+        TokenPattern(r'\*"([^"]+)"', TokenType.ALL_FIELDS),
+        TokenPattern(r'\$"([^"]+)"', TokenType.ABSTRACT),
+        # Regular quotes (high priority)
+        TokenPattern(r'"([^"]+)"', TokenType.PHRASE),
+        # Date patterns (before other operators) - exact length only, strict boundaries
+        TokenPattern(r">(\d{8}|\d{12}|\d{14})(?!\w)", TokenType.DATE_GT),  # Strict boundaries
+        TokenPattern(r"<(\d{8}|\d{12}|\d{14})(?!\w)(?!\S)", TokenType.DATE_LT),  # Strict boundaries
+        # Field prefixes (without quotes)
+        TokenPattern(r"@(\S+)", TokenType.AUTHOR),
+        TokenPattern(r"#(\S+)", TokenType.CATEGORY),
+        TokenPattern(r"\*(\S+)", TokenType.ALL_FIELDS),
+        TokenPattern(r"\$(\S+)", TokenType.ABSTRACT),
+        # Operators and parentheses (must come before word patterns)
+        TokenPattern(r"\|", TokenType.OR, 0),
+        TokenPattern(r"-", TokenType.NOT, 0),
+        TokenPattern(r"\(", TokenType.LPAREN, 0),
+        TokenPattern(r"\)", TokenType.RPAREN, 0),
+        # Words (lowest priority - catch all remaining non-operator characters)
+        TokenPattern(r"[^\s\|\-\(\)]+", None, 1),  # Exclude operators from word pattern
+    ]
 
-        # Pattern for matching tokens
-        patterns = [
-            # Phrases (highest priority)
-            (r'"([^"]+)"', TokenType.PHRASE, 1, True),  # capture group 1, include quotes
-
-            # Date patterns (high priority, before other < > patterns)
-            (r">(\d{8,14})", TokenType.DATE_GT, 1, False),
-            (r"<(\d{8,14})(?!\S)", TokenType.DATE_LT, 1, False),  # Don't match <@mentions
-
-            # arXiv-style field specifications (ti:, au:, etc.) without parentheses
-            (r"(ti|au|abs|cat|all|co|jr|rn|id):(?!\()", TokenType.ARXIV_FIELD, 1, False),
-
-            # Prefixed tokens
-            (r"@(\S+)", TokenType.AUTHOR, 1, False),
-            (r"#(\S+)", TokenType.CATEGORY, 1, False),
-            (r"\*(\S+)", TokenType.ALL_FIELDS, 1, False),
-            (r"\$(\S+)", TokenType.ABSTRACT, 1, False),
-
-            # Operators
-            (r"\|", TokenType.OR, 0, False),
-            (r"-(?=\S)", TokenType.NOT, 0, False),
-            (r"\(", TokenType.LPAREN, 0, False),
-            (r"\)", TokenType.RPAREN, 0, False),
+    def __init__(self) -> None:
+        """Compile regex patterns for efficiency."""
+        self.compiled_patterns = [
+            (re.compile(pattern.regex), pattern.token_type, pattern.capture_group)
+            for pattern in self.PATTERNS
         ]
 
-        # First pass: Extract special tokens
-        for pattern, token_type, capture_group, _include_match in patterns:
-            for match in re.finditer(pattern, query):
-                start = match.start()
-                end = match.end()
+    def tokenize(self, query: str) -> list[Token]:
+        """Tokenize query string in a single pass with clear priority."""
+        tokens = []
+        pos = 0
 
-                # Skip if this position is already consumed
-                if any(pos in consumed_positions for pos in range(start, end)):
-                    continue
+        while pos < len(query):
+            # Skip whitespace
+            if query[pos].isspace():
+                pos += 1
+                continue
 
-                # Mark positions as consumed
-                for pos in range(start, end):
-                    consumed_positions.add(pos)
+            # Try each pattern in priority order
+            matched = False
+            for regex, pattern_token_type, capture_group in self.compiled_patterns:
+                match = regex.match(query, pos)
+                if match:
+                    # Extract value from appropriate capture group
+                    if capture_group == 0 or match.lastindex is None:
+                        value = match.group(0)  # Entire match
+                    else:
+                        value = match.group(capture_group)  # Specific group
 
-                # Extract value
-                value = match.group(capture_group) if capture_group > 0 else match.group(0)
+                    # Special handling for word classification
+                    if pattern_token_type is None:
+                        classified_type = self._classify_word(value)
+                        # Convert sort tokens to lowercase for consistency
+                        if classified_type == TokenType.SORT:
+                            value = value.lower()
+                        final_token_type = classified_type
+                    else:
+                        final_token_type = pattern_token_type
 
-                # Add token
-                tokens.append(Token(token_type, value, start))
+                    tokens.append(Token(final_token_type, value, pos))
+                    pos = match.end()
+                    matched = True
+                    break
 
-        # Second pass: Extract remaining words (keywords, numbers, sort specs)
-        remaining_text = []
-        for i, char in enumerate(query):
-            if i not in consumed_positions:
-                remaining_text.append((char, i))
-
-        # Group consecutive characters into words
-        if remaining_text:
-            current_word = []
-            word_start = None
-
-            for char, pos in remaining_text:
-                if char.isspace():
-                    if current_word:
-                        word = "".join(current_word)
-                        self._add_word_token(tokens, word, word_start)
-                        current_word = []
-                        word_start = None
-                else:
-                    if not current_word:
-                        word_start = pos
-                    current_word.append(char)
-
-            # Don't forget the last word
-            if current_word:
-                word = "".join(current_word)
-                self._add_word_token(tokens, word, word_start)
-
-        # Sort tokens by position
-        tokens.sort(key=lambda t: t.position)
+            if not matched:
+                # Skip unexpected character and continue
+                pos += 1
 
         return tokens
 
-    def _add_word_token(self, tokens: list[Token], word: str, position: int) -> None:
-        """Add a token for a word (keyword, number, or sort spec)."""
-        if not word:
-            return
-
-        # Check if it's a number
+    def _classify_word(self, word: str) -> TokenType:
+        """Classify a word as NUMBER, SORT, or KEYWORD."""
+        # Check if it's a number (all digits are treated as potential result counts)
         if word.isdigit():
-            tokens.append(Token(TokenType.NUMBER, word, position))
+            return TokenType.NUMBER
         # Check if it's a sort specifier (case insensitive)
-        elif word.lower() in SORT_MAPPINGS:
-            tokens.append(Token(TokenType.SORT, word.lower(), position))
+        if word.lower() in SORT_MAPPINGS:
+            return TokenType.SORT
         # Otherwise it's a keyword
-        else:
-            tokens.append(Token(TokenType.KEYWORD, word, position))
+        return TokenType.KEYWORD

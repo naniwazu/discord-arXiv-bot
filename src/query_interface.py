@@ -28,5 +28,3 @@ def parse(search_query: str) -> arxiv.Search | None:
 
     # If parsing fails, return None
     return None
-
-

@@ -126,16 +126,3 @@ SORT_MAPPINGS = {
 
 # Default sort
 DEFAULT_SORT = (arxiv.SortCriterion.SubmittedDate, arxiv.SortOrder.Descending)
-
-# arXiv field mappings
-ARXIV_FIELDS = {
-    "ti": "title",
-    "au": "author",
-    "abs": "abstract",
-    "co": "comment",
-    "jr": "journal reference",
-    "cat": "category",
-    "rn": "report number",
-    "id": "id",
-    "all": "all",
-}

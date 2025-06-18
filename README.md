@@ -1,4 +1,9 @@
 # discord-arXiv-bot
+
+[![CI](https://github.com/naniwazu/discord-arXiv-bot/workflows/CI/badge.svg)](https://github.com/naniwazu/discord-arXiv-bot/actions)
+[![codecov](https://codecov.io/gh/naniwazu/discord-arXiv-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/naniwazu/discord-arXiv-bot)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 arXiv上のプレプリントを検索・自動取得するためのbotです。
 
 * Discord Botとして動作し、スラッシュコマンドまたはWebhook経由で利用できます。
@@ -64,3 +69,35 @@ arXiv上のプレプリントを検索・自動取得するためのbotです。
 
 ## 自動取得について
 チャンネル名を`auto`で始めると、トピック（チャンネル設定から書き込めます）に入力したクエリに従って、毎日日本時間朝6時に48~72時間前に投稿された論文を自動取得します。
+
+## Development
+
+### Setup
+```bash
+# Install dependencies
+uv sync
+
+# Install pre-commit hooks
+uv run pre-commit install
+```
+
+### Code Quality
+```bash
+# Run linting
+uv run ruff check src/ tests/
+
+# Run formatting  
+uv run ruff format src/ tests/
+
+# Run tests
+uv run pytest tests/
+
+# Run tests with coverage
+uv run pytest tests/ --cov=src --cov-report=term
+```
+
+### CI/CD
+- **Automated testing**: All PRs run pytest with full test coverage
+- **Code quality**: Ruff linting and formatting checks enforced  
+- **Pre-commit hooks**: Local validation before commits
+- **Coverage reporting**: Code coverage tracked and reported

@@ -61,9 +61,15 @@ max-args = 6
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-    "S101",  # assert is OK in tests
-    "ANN",   # annotations not required in tests
-    "D",     # docstrings not required in tests
+    "S101",    # assert is OK in tests
+    "ANN",     # annotations not required in tests
+    "D",       # docstrings not required in tests
+    "PLR2004", # magic values are OK in tests
+    "F841",    # unused variables OK in tests (for crash testing)
+    "ERA001",  # commented code OK in tests
+]
+"src/webhook_server.py" = [
+    "PLC0415", # conditional imports are needed for optional scheduler module
 ]
 
 [tool.pytest.ini_options]
@@ -72,3 +78,23 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/test_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]

@@ -1,6 +1,5 @@
 """Tests for the tokenizer module."""
 
-
 from src.query_parser.tokenizer import Tokenizer
 from src.query_parser.types import TokenType
 

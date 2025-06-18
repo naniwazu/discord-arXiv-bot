@@ -1,6 +1,5 @@
 """Tests for the validator module."""
 
-
 from src.query_parser.types import Token, TokenType
 from src.query_parser.validator import QueryValidator
 
@@ -98,11 +97,11 @@ class TestQueryValidator:
         """Test valid complex arXiv category formats with multiple separators."""
         test_cases = [
             "cond-mat.str-el",  # Condensed matter - strongly correlated electrons
-            "physics.gen-ph",   # Physics - General Physics
-            "math-ph",          # Mathematical Physics
-            "nlin.CD",          # Nonlinear Sciences - Chaotic Dynamics
-            "astro-ph.CO",      # Astrophysics - Cosmology
-            "q-bio.QM",         # Quantitative Biology - Quantitative Methods
+            "physics.gen-ph",  # Physics - General Physics
+            "math-ph",  # Mathematical Physics
+            "nlin.CD",  # Nonlinear Sciences - Chaotic Dynamics
+            "astro-ph.CO",  # Astrophysics - Cosmology
+            "q-bio.QM",  # Quantitative Biology - Quantitative Methods
         ]
         for category in test_cases:
             tokens = [Token(TokenType.CATEGORY, category, 0)]
