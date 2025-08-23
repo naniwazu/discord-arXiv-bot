@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .constants import CATEGORY_CORRECTIONS, CATEGORY_SHORTCUTS
+from .token_converter import TokenToQueryConverter
 from .types import Token, TokenType
 
 
@@ -27,13 +27,14 @@ class ParenthesesProcessor:
     """Non-recursive, stack-based parentheses processing."""
 
     def __init__(self) -> None:
-        """Initialize field prefix mappings."""
+        """Initialize field prefix mappings and token converter."""
         self.field_prefixes = {
             TokenType.AUTHOR: "au:",
             TokenType.CATEGORY: "cat:",
             TokenType.ALL_FIELDS: "all:",
             TokenType.ABSTRACT: "abs:",
         }
+        self.token_converter = TokenToQueryConverter()
 
     def process(self, tokens: list[Token]) -> list[Token | GroupedExpression]:
         """Process parentheses safely without recursion.
@@ -183,43 +184,7 @@ class ParenthesesProcessor:
         if isinstance(item, GroupedExpression):
             return item.to_query_string()
         if isinstance(item, Token):
-            return self._convert_token_to_query(item)
-        return None
-
-    def _convert_token_to_query(self, token: Token) -> str | None:
-        """Convert a single token to an arXiv query part.
-
-        This is simplified version of the transformer's token conversion logic.
-        """
-        if token.type == TokenType.KEYWORD:
-            return f"ti:{token.value}"
-
-        field_mapping = {
-            TokenType.AUTHOR: "au",
-            TokenType.CATEGORY: "cat",
-            TokenType.ALL_FIELDS: "all",
-            TokenType.ABSTRACT: "abs",
-        }
-
-        if token.type in field_mapping:
-            field_prefix = field_mapping[token.type]
-            value = token.value
-
-            # Apply category normalization for category fields
-            if token.type == TokenType.CATEGORY:
-                value = self._normalize_category(value)
-
-            # Add quotes if value contains spaces
-            if " " in value or ('"' in value):
-                if value.startswith('"') and value.endswith('"'):
-                    return f"{field_prefix}:{value}"
-                return f'{field_prefix}:"{value}"'
-            return f"{field_prefix}:{value}"
-
-        if token.type == TokenType.PHRASE:
-            return f'ti:"{token.value}"'
-
-        # Ignore operators and other control tokens in this context
+            return self.token_converter.convert(item)
         return None
 
     def _field_prefix_to_type(self, prefix: str) -> TokenType:
@@ -231,18 +196,3 @@ class ParenthesesProcessor:
             "abs:": TokenType.ABSTRACT,
         }
         return prefix_to_type.get(prefix, TokenType.KEYWORD)
-
-    def _normalize_category(self, category: str) -> str:
-        """Normalize category name."""
-        category_lower = category.lower()
-
-        # Check for shortcuts first
-        if category_lower in CATEGORY_SHORTCUTS:
-            return CATEGORY_SHORTCUTS[category_lower]
-
-        # Check for case corrections
-        if category_lower in CATEGORY_CORRECTIONS:
-            return CATEGORY_CORRECTIONS[category_lower]
-
-        # Return as-is if no correction needed
-        return category

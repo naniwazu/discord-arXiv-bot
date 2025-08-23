@@ -5,7 +5,7 @@ description = "Discord bot for searching and sharing arXiv research papers"
 authors = [
     {name = "naniwazu", email = "sakuyakonohana39@gmail.com"},
 ]
-readme = "README.md"
+# readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "discord-py>=2.3.2",
